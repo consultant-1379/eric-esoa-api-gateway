@@ -1,0 +1,7 @@
+global:
+  security:
+    privilegedPolicyClusterRoleName: privileged_cluster_role
+  createDB: true
+
+database:
+  sslEnabled: true

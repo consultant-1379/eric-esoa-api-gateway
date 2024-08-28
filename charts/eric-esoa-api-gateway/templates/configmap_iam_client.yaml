@@ -1,0 +1,22 @@
+{{- if .Values.iam.createIamClient }}
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: {{ template "eric-esoa-api-gateway.name" . }}-iam-client-configmap
+  labels:
+    app: {{ template "eric-esoa-api-gateway.name" . }}
+  {{- include "eric-esoa-api-gateway.labels" .| nindent 4 }}
+  annotations:
+    {{- include "eric-esoa-api-gateway.annotations" . | nindent 4 }}
+data:
+  client-configuration.json: |
+    {
+      "clientId": "{{ .Values.global.iam.clientId }}",
+      "authorizationServicesEnabled": "true",
+      "implicitFlowEnabled": "true",
+      "directAccessGrantsEnabled": "true",
+      "serviceAccountsEnabled": "true",
+      "secret": "this value can be overriden by env var named CLIENT_SECRET defined in hook",
+      "redirectUris": ["https://*"]
+    }
+{{- end }}

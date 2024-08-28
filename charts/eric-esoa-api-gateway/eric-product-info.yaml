@@ -1,0 +1,24 @@
+productName: "ESOA Api-Gateway Service"
+productNumber: "CXC 201 2330"
+images:
+  mainImage:
+    productName: "ESOA Api-Gateway Service"
+    productNumber: "CXC 201 2331"
+    registry: "armdocker.rnd.ericsson.se"
+    repoPath: "proj-orchestration-so"
+    name: "eric-esoa-api-gateway"
+    tag: "MAIN_IMAGE_TAG"
+  keycloakClient:
+    productName: "keycloak client Image"
+    productNumber: ""
+    registry: "armdocker.rnd.ericsson.se"
+    repoPath: "proj-orchestration-so"
+    name: "keycloak-client"
+    tag: "1.0.0-68"
+  init:
+    productName: "so base image"
+    productNumber: ""
+    name: "so-base"
+    tag: "SO_BASE_VERSION"
+    registry: "armdocker.rnd.ericsson.se"
+    repoPath: "proj-orchestration-so"

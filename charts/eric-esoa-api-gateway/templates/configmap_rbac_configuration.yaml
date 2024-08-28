@@ -1,0 +1,89 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: {{ template "eric-esoa-api-gateway.name" . }}-rbac-configuration-configmap
+  labels:
+    app: {{ template "eric-esoa-api-gateway.name" . }}
+    chart: {{ template "eric-esoa-api-gateway.chart" . }}
+  {{- include "eric-esoa-api-gateway.labels" .| nindent 4 }}
+  annotations:
+    {{- include "eric-esoa-api-gateway.annotations" . | nindent 4 }}
+data:
+  rbac-configuration.json: |
+    {
+        "roles": [
+            {
+                "name": "RouteAdmin",
+                "attributes": {
+                    "type": [
+                        "internal"
+                    ]
+                }
+            }
+        ],
+        "authorization": {
+            "resources": [
+                {
+                    "name": "API Gateway",
+                    "type": "urn:eo:apigateway:resources:services",
+                    "ownerManagedAccess": false,
+                    "attributes": {},
+                    "uris": [
+                        "/v1/routes",
+                        "/v1/routes/**",
+                        "/auth/v1/login/"
+                    ],
+                    "scopes": [
+                        {
+                            "name": "DELETE"
+                        },
+                        {
+                            "name": "GET"
+                        },
+                        {
+                            "name": "POST"
+                        },
+                        {
+                            "name": "PUT"
+                        }
+                    ]
+                }
+            ],
+            "policies": [
+                {
+                    "name": "Is Route Admin",
+                    "type": "role",
+                    "logic": "POSITIVE",
+                    "decisionStrategy": "UNANIMOUS",
+                    "config": {
+                        "roles": "[{\"id\":\"RouteAdmin\",\"required\":false}]"
+                    }
+                },
+                {
+                    "name": "Admin Routes",
+                    "type": "scope",
+                    "logic": "POSITIVE",
+                    "decisionStrategy": "AFFIRMATIVE",
+                    "config": {
+                        "resources": "[\"API Gateway\"]",
+                        "scopes": "[\"GET\",\"PUT\",\"DELETE\",\"POST\"]",
+                        "applyPolicies": "[\"Is Route Admin\"]"
+                    }
+                }
+            ],
+            "scopes": [
+                {
+                    "name": "GET"
+                },
+                {
+                    "name": "POST"
+                },
+                {
+                    "name": "DELETE"
+                },
+                {
+                    "name": "PUT"
+                }
+            ]
+        }
+    }

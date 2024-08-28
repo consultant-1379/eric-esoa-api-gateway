@@ -1,0 +1,90 @@
+{{- if .Values.iam.createIamClient }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ template "eric-esoa-api-gateway.name" . }}-create-iam-client-hook
+  labels:
+    app: {{ .Chart.Name }}
+  {{- include "eric-esoa-api-gateway.labels" .| nindent 4 }}
+  annotations:
+  {{- include "eric-esoa-api-gateway.annotations" .| nindent 4 }}
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "0"
+    "helm.sh/hook-delete-policy": hook-succeeded,before-hook-creation
+spec:
+  backoffLimit: 8
+  template:
+    metadata:
+      annotations:
+      {{- include "eric-esoa-api-gateway.annotations" .| nindent 8 }}
+      labels:
+        app: {{ .Chart.Name }}
+      {{- include "eric-esoa-api-gateway.labels" .| nindent 8 }}
+    spec:
+      {{- if  .Values.imageCredentials.pullSecret }}
+      imagePullSecrets:
+        - name: {{ .Values.imageCredentials.pullSecret | quote }}
+      {{- else if .Values.global.pullSecret }}
+      imagePullSecrets:
+        - name: {{ .Values.global.pullSecret | quote }}
+      {{- end }}
+      restartPolicy: Never
+      serviceAccountName: {{ template "eric-esoa-api-gateway.name" . }}-sa
+      {{- if .Values.tolerations }}
+      tolerations:
+        {{ toYaml .Values.tolerations | indent 8 | trim }}
+      {{- end }}
+      containers:
+        - name: keycloak-client
+          image: {{ template "eric-esoa-so-library-chart.imagePath" (dict "imageId" "keycloakClient" "values" .Values "files" .Files) }}
+          imagePullPolicy: {{ .Values.global.registry.imagePullPolicy | quote }}
+          env:
+          - name: CLIENT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.iam.kubernetesSecret | quote }}
+                key: {{ .Values.iam.secretKey | quote }}
+          - name: IAM_ADMIN_USER
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.global.iam.adminSecret | quote }}
+                key: {{ .Values.global.iam.userKey | quote }}
+          - name: IAM_ADMIN_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.global.iam.adminSecret | quote }}
+                key: {{ .Values.global.iam.passwordKey | quote }}
+          securityContext:
+            privileged: false
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false # kecloak client does write on the root file system
+            runAsNonRoot: true
+            runAsUser: 128474 # due to a limitation in the keycloak client image, it needs to be just this id
+            capabilities:
+              drop:
+                - "all"
+          args:
+          - "create"
+          - "client"
+          - "--keycloak_hostname={{ .Values.global.hosts.iam }}"
+          - "--keycloak_user=$(IAM_ADMIN_USER)"
+          - "--keycloak_password=$(IAM_ADMIN_PASSWORD)"
+          - "--config=/config/client-configuration.json"
+          volumeMounts:
+          - name: create-iam-client-volume
+            mountPath: /config
+          - name: create-cacert-volume
+            mountPath: /mnt/certs
+      nodeSelector: {{- include "eric-esoa-so-library-chart.nodeSelector" . | nindent 8 }}
+      volumes:
+      - name: create-iam-client-volume
+        configMap:
+          name: {{ .Chart.Name }}-iam-client-configmap
+          defaultMode: 0777
+      - name: create-cacert-volume
+        secret:
+          secretName: {{ .Values.global.iam.cacert.secretName }}
+          items:
+            - key: {{ .Values.global.iam.cacert.key }}
+              path: {{ .Values.global.iam.cacert.filePath }}
+{{- end }}

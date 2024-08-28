@@ -1,0 +1,255 @@
+modelVersion: 2.0
+
+docker-images:
+  - java17mvn: armdocker.rnd.ericsson.se/proj-adp-cicd-drop/bob-java17mvnbuilder:latest
+  - doc-builder: armdocker.rnd.ericsson.se/sandbox/adp-staging/adp-cicd/bob-docbuilder:41a32e6
+  - adp-release-auto: armdocker.rnd.ericsson.se/sandbox/adp-staging/adp-cicd/bob-adp-release-auto:latest
+  - adp-helm-dr-check: armdocker.rnd.ericsson.se/sandbox/adp-staging/adp-cicd/common-library-adp-helm-dr-check:latest
+  - helm-dr-check: armdocker.rnd.ericsson.se/sandbox/adp-staging/adp-cicd/common-library-adp-helm-dr-check:latest
+  - sdk-validator: armdocker.rnd.ericsson.se/proj-eric-oss-sdkschema-drop/eric-oss-sdkschema-validator:latest
+  - elib-make-utilities: armdocker.rnd.ericsson.se/proj-eric-oss-drop/eric-elib/elib_makeutilities:${env.ELIB_MAKE_UTILITIES_TAG}
+  - bth-linter: armdocker.rnd.ericsson.se/proj-eric-oss-drop/eric-bth/eric-bth-spectral-linter:${env.BTH_LINTER_TAG}
+  - adp-helm-kubectl: armdocker.rnd.ericsson.se/proj-adp-cicd-drop/bob-py3kubehelmbuilder:${env.HELM_KUBECTL_TAG}
+
+
+properties:
+  - mvn-flags: -e -s settings.xml -Duser.home=. -Pci
+  - image-full-name: armdocker.rnd.ericsson.se/proj-orchestration-so/eric-esoa-api-gateway
+  - helm-chart-name: eric-esoa-api-gateway
+  - helm-chart-repo: https://arm.rnd.ki.sw.ericsson.se/artifactory/proj-so-gs-all-helm
+  - gerrit-url: https://gerrit.ericsson.se/plugins/gitiles/ESOA/ESOA-Parent/com.ericsson.bos.so/eric-esoa-api-gateway
+  - gerrit-project: ESOA/ESOA-Parent/com.ericsson.bos.so/eric-esoa-api-gateway
+  # Generic repository for publishing artifacts such as documentation
+  - generic-drop-repo: https://arm.seli.gic.ericsson.se/artifactory/proj-eric-oss-drop-generic
+  - skipped-design-rules: "-DhelmDesignRule.config.drHc001=skip
+      -DhelmDesignRule.config.DR-D1120-055=skip
+      -DhelmDesignRule.config.DR-D1120-012=skip
+      -DhelmDesignRule.config.DR-D1120-014=skip
+      -DhelmDesignRule.config.DR-D1126-030=skip
+      -DhelmDesignRule.config.DR-D1126-005=skip
+      -DhelmDesignRule.config.DR-D1123-125=skip
+      -DhelmDesignRule.config.DR-D1120-045=skip
+      -DhelmDesignRule.config.DR-D1120-090=skip
+      -DhelmDesignRule.config.DR-D470217-001=skip
+      -DhelmDesignRule.config.DR-D1121-060=skip
+      -DhelmDesignRule.config.DR-D1123-127=skip
+      -DhelmDesignRule.config.DR-D1123-128=skip"
+
+
+var:
+  - version
+  - commithash
+  - commit-author
+  - commit-email
+  - rest2html-optional
+  - rstate
+  - revision
+  - version
+  - version-prefix
+
+env:
+  - RELEASE (default=false)
+  - API_TOKEN (default=AKCp5dKss61rXH4KVzQDncn9mnMRbVxhKpmGKeNEUFTT2YHav88w6dm4Sn2SNuSq4RzuV6LoF)
+  - PWD
+  - GERRIT_CENTRAL (default=ssh://gerrit.ericsson.se:29418)
+  # BTH Linter
+  - OPEN_API_SPEC_DIRECTORY (default=src/main/resources/v1)
+  # REST2HTML - Document Number of the REST Container file (The decimal class for a container is 190 89-)
+  - REST2HTML_NUM (default="190 89-CAAH 101 091/1")
+  - RELEASE_AUTO_TAG (default=latest)
+  - ELIB_MAKE_UTILITIES_TAG (default=1.2.2)
+  - BTH_LINTER_TAG (default=latest)
+  - ASCII_DOC_BUILDER_TAG (default=latest)
+  - SELI_ARTIFACTORY_REPO_PASS
+  - SELI_ARTIFACTORY_REPO_USER
+  - HELM_KUBECTL_TAG (default=latest)
+  # MAVEN
+  - HOME
+  - WORKSPACE (default=$HOME/.m2)
+  - MAVEN_OPTS (default=)
+  # SonarQube
+  - SONAR_HOST_URL (default="https://codeanalyzer2.internal.ericsson.com/")
+  - SONAR_ENTERPRISE_AUTH_TOKEN (default="ee9b1b7cbd0a5e223c3d8928bd78b48f6c9f6403")
+  - SONAR_BRANCH (default="master")
+
+rules:
+  clean:
+    - task: rm
+      cmd:
+        - rm -rf .bob/
+        - rm -f artifact.properties
+        - rm -rf helm-target/
+        - rm -rf target
+        - rm -rf .config/
+
+  adp-helm-dr-check:
+    - task: dr-check
+      docker-image: helm-dr-check
+      cmd: helm-dr-check --helm-chart charts/${helm-chart-name} -f charts/${helm-chart-name}/valuesio.yaml --output ./ ${skipped-design-rules}
+
+  init:
+    - task: version
+      docker-image: adp-release-auto
+      cmd: generate-version --is-release true --output version
+    - task: rstate
+      docker-image: adp-release-auto
+      cmd: get_rstate.py ${var.version} > .bob/var.rstate
+    - task: preliminary-revision # For example: PA1
+      cmd: RSTATE=${var.rstate} && echo P${RSTATE:2}1 > .bob/var.revision
+    - task: commit
+      docker-image: adp-release-auto
+      cmd:
+        - git rev-parse --short HEAD > .bob/var.commithash
+        - git rev-parse HEAD > .bob/var.commithash-full
+        - git log -1 --format='%aN' > .bob/var.commit-author
+        - git log -1 --format='%aE' > .bob/var.commit-email
+    - task: adp-artifacts-properties
+      docker-image: adp-release-auto
+      cmd:
+        - generate-adp-artifacts
+          --chart-name ${helm-chart-name}
+          --chart-version ${var.version}
+          --chart-repo ${helm-chart-repo}
+    - task: git-properties
+      cmd:
+        - echo "GIT_TAG=$(git log -1 --pretty=format:'%h')" >> artifact.properties
+        - echo "GIT_COMMIT_AUTHOR=$(git log -1 --pretty=format:'%an')" >> artifact.properties
+        - echo "GIT_AUTHOR_EMAIL=$(git log -1 --pretty=format:'%ae')" >> artifact.properties
+        - echo "GIT_COMMIT_SUMMARY=$(git log -1 --pretty=format:'%s')" >> artifact.properties
+
+  lint:
+    - task: markdownlint
+      docker-image: doc-builder
+      cmd: markdownlint --config /etc/markdownlint-cli/adp.yaml $(git ls-files -- \*\.md | cat | xargs) || true
+    - task: vale
+      docker-image: doc-builder
+      cmd: vale --output line --no-wrap $(git ls-files -- \*\.md | cat | xargs)  || true
+    - task: helm
+      docker-image: adp-release-auto
+      cmd: helm lint charts/${helm-chart-name}
+    - task: oas-bth-linter
+      docker-image: bth-linter
+      docker-flags:
+        - "--env OPEN_API_SPEC_DIRECTORY=${env.OPEN_API_SPEC_DIRECTORY}"
+        - "--env OUTPUT_DIRECTORY=.bob"
+      cmd: /bth-linter.sh
+
+  generate:
+    - rule: rest-2-html
+    - rule: generate-docs
+
+  # Generate HTML output files from OpenAPI spec
+  rest-2-html:
+    - task: check-has-open-api-been-modified
+      cmd:
+        - if [ -z "$(git diff --name-status HEAD~ | grep src/main/resources/v1/eric-oss-api-gateway-route-auth-openapi.yaml)" ]; then
+          echo "NO modifications have been made to the OpenAPI spec.";
+          echo false > .bob/var.has-openapi-spec-been-modified;
+          else
+          echo "There HAS been modifications made to the OpenAPI spec.";
+          echo true > .bob/var.has-openapi-spec-been-modified;
+          fi
+    - task: zip-open-api-doc
+      docker-image: elib-make-utilities
+      cmd:
+        - ls -ltr src/main/resources/v1/
+        - sh -c 'cd src/main/resources/v1/ && zip -r eric-oss-api-gateway-route-openapi.zip eric-oss-api-gateway-route-auth-openapi.yaml'
+        - ls -ltr src/main/resources/v1/
+    - task: generate-html-output-files
+      docker-image: elib-make-utilities
+      cmd:
+        - ls -ltr
+        - /usr/src/elib/makerestc
+          -inp src/main/resources/v1/eric-oss-api-gateway-route-openapi.zip
+          -oud .
+          -rev ${var.revision}
+          -inf ${var.commit-email}
+          -num ${env.REST2HTML_NUM}
+          -cre ${var.commit-author}
+          -app ${var.commit-author}
+          -d
+
+        - ls -ltr
+        - cat rest_conversion_log.txt
+
+  validate-helm-design-rules:
+    - task: helm-chart-check
+      docker-image: adp-helm-dr-check
+      cmd: java -jar /helm-dr-check.jar --helm-chart charts/${helm-chart-name} --output .bob/
+
+  build:
+    - task: build-java
+      docker-image: java17mvn
+      docker-flags:
+        - --network host
+      cmd: mvn ${mvn-flags} verify
+
+  sonar:
+    - task: sonar
+      docker-image: java17mvn
+      docker-flags:
+        - --network host
+      cmd: mvn ${mvn-flags} sonar:sonar
+        -Dsonar.login=${env.SONAR_ENTERPRISE_AUTH_TOKEN}
+        -Dsonar.branch.target=${env.SONAR_BRANCH}
+        -Dsonar.host.url=${env.SONAR_HOST_URL}
+        -Dsonar.analysis.mode=publish
+
+  image:
+    - task: build-image
+      cmd: docker build ${env.PWD}
+        --tag ${image-full-name}:${var.version}
+        --build-arg REPOSITORY=${gerrit-url}
+        --build-arg COMMIT=${var.commithash}
+        --build-arg APP_VERSION=${var.version}
+
+  chart:
+    - task: dependency-update
+      docker-image: adp-release-auto
+      docker-flags:
+        - --network host
+      cmd: helm dependency update charts/${helm-chart-name}
+
+  package:
+    - task: image-push
+      cmd: docker push ${image-full-name}:${var.version}
+    - task: helm-package
+      docker-image: adp-release-auto
+      cmd: helm-package
+        --folder charts/${helm-chart-name}
+        --workdir .bob --output helm-target/${helm-chart-name}
+        --version ${var.version}
+        --replace eric-product-info.yaml:MAIN_IMAGE_TAG=${var.version}
+
+  publish:
+    - task: helm-upload
+      docker-image: adp-release-auto
+      docker-flags:
+        - --network host
+      cmd: upload_file.sh
+        --filename=helm-target/${helm-chart-name}/${helm-chart-name}-${var.version}.tgz
+        --repository=${helm-chart-repo}/${helm-chart-name}/
+        --api-token=${env.API_TOKEN}
+    - rule: publish-oas
+
+  # Publish OpenAPI specs to Generic drop repository
+  publish-oas:
+    - task: upload-open-api-specs
+      docker-image: adp-helm-kubectl
+      docker-flags:
+        - "--env OPEN_API_SPEC_DIRECTORY=${env.OPEN_API_SPEC_DIRECTORY}"
+      cmd:
+        bash -c 'for oas in ${env.OPEN_API_SPEC_DIRECTORY}/*openapi.yaml; do
+        if [ -f $oas ]; then
+        curl -X PUT -T $oas ${generic-drop-repo}-local/${helm-chart-name}/${var.version}/$(basename -- $oas) -u "${env.SELI_ARTIFACTORY_REPO_USER}:${env.SELI_ARTIFACTORY_REPO_PASS}";
+        fi
+        done'
+
+  tagging:
+    - task: push-git-tag
+      cmd:
+        # - chown $(id -u):$(id -g) ~/.ssh/*
+        - git tag ${helm-chart-name}-${var.version}
+        - git remote set-url --push origin ${env.GERRIT_CENTRAL}/${gerrit-project}
+        - git push origin ${helm-chart-name}-${var.version}
+

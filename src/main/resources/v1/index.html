@@ -1,0 +1,730 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Dynamic Routes in API Gateway</title>
+    <style type="text/css">
+      body {
+	font-family: Trebuchet MS, sans-serif;
+	font-size: 15px;
+	color: #444;
+	margin-right: 24px;
+}
+
+h1	{
+	font-size: 25px;
+}
+h2	{
+	font-size: 20px;
+}
+h3	{
+	font-size: 16px;
+	font-weight: bold;
+}
+hr	{
+	height: 1px;
+	border: 0;
+	color: #ddd;
+	background-color: #ddd;
+}
+
+.app-desc {
+  clear: both;
+  margin-left: 20px;
+}
+.param-name {
+  width: 100%;
+}
+.license-info {
+  margin-left: 20px;
+}
+
+.license-url {
+  margin-left: 20px;
+}
+
+.model {
+  margin: 0 0 0px 20px;
+}
+
+.method {
+  margin-left: 20px;
+}
+
+.method-notes	{
+	margin: 10px 0 20px 0;
+	font-size: 90%;
+	color: #555;
+}
+
+pre {
+  padding: 10px;
+  margin-bottom: 2px;
+}
+
+.http-method {
+ text-transform: uppercase;
+}
+
+pre.get {
+  background-color: #0f6ab4;
+}
+
+pre.post {
+  background-color: #10a54a;
+}
+
+pre.put {
+  background-color: #c5862b;
+}
+
+pre.delete {
+  background-color: #a41e22;
+}
+
+.huge	{
+	color: #fff;
+}
+
+pre.example {
+  background-color: #f3f3f3;
+  padding: 10px;
+  border: 1px solid #ddd;
+}
+
+code {
+  white-space: pre;
+}
+
+.nickname {
+  font-weight: bold;
+}
+
+.method-path {
+  font-size: 1.5em;
+  background-color: #0f6ab4;
+}
+
+.up {
+  float:right;
+}
+
+.parameter {
+  width: 500px;
+}
+
+.param {
+  width: 500px;
+  padding: 10px 0 0 20px;
+  font-weight: bold;
+}
+
+.param-desc {
+  width: 700px;
+  padding: 0 0 0 20px;
+  color: #777;
+}
+
+.param-type {
+  font-style: italic;
+}
+
+.param-enum-header {
+width: 700px;
+padding: 0 0 0 60px;
+color: #777;
+font-weight: bold;
+}
+
+.param-enum {
+width: 700px;
+padding: 0 0 0 80px;
+color: #777;
+font-style: italic;
+}
+
+.field-label {
+  padding: 0;
+  margin: 0;
+  clear: both;
+}
+
+.field-items	{
+	padding: 0 0 15px 0;
+	margin-bottom: 15px;
+}
+
+.return-type {
+  clear: both;
+  padding-bottom: 10px;
+}
+
+.param-header {
+  font-weight: bold;
+}
+
+.method-tags {
+  text-align: right;
+}
+
+.method-tag {
+  background: none repeat scroll 0% 0% #24A600;
+  border-radius: 3px;
+  padding: 2px 10px;
+  margin: 2px;
+  color: #FFF;
+  display: inline-block;
+  text-decoration: none;
+}
+
+    </style>
+  </head>
+  <body>
+  <h1>Dynamic Routes in API Gateway</h1>
+    <div class="app-desc">Dynamic Routes in API Gateway</div>
+    <div class="app-desc">More information: <a href="https://openapi-generator.tech">https://openapi-generator.tech</a></div>
+    <div class="app-desc">Contact Info: <a href="Team AetosDios<a href="mailto:PDLTEAMAET@pdl.internal.ericsson.com">PDLTEAMAET@pdl.internal.ericsson.com</a>">Team AetosDios<a href="mailto:PDLTEAMAET@pdl.internal.ericsson.com">PDLTEAMAET@pdl.internal.ericsson.com</a></a></div>
+    <div class="app-desc">Version: 0.0.1</div>
+    <div class="app-desc">BasePath:</div>
+    <div class="license-info">COPYRIGHT Ericsson 2021</div>
+    <div class="license-url">https://www.ericsson.com/en/legal</div>
+  <h2>Access</h2>
+
+  <h2><a name="__Methods">Methods</a></h2>
+  [ Jump to <a href="#__Models">Models</a> ]
+
+  <h3>Table of Contents </h3>
+  <div class="method-summary"></div>
+  <h4><a href="#CreateDynamicRoute">CreateDynamicRoute</a></h4>
+  <ul>
+  <li><a href="#create"><code><span class="http-method">post</span> /v1/routes</code></a></li>
+  </ul>
+  <h4><a href="#DeleteDynamicRoute">DeleteDynamicRoute</a></h4>
+  <ul>
+  <li><a href="#delete"><code><span class="http-method">delete</span> /v1/routes/{route-id}</code></a></li>
+  </ul>
+  <h4><a href="#GetADynamicRoute">GetADynamicRoute</a></h4>
+  <ul>
+  <li><a href="#getById"><code><span class="http-method">get</span> /v1/routes/{route-id}</code></a></li>
+  </ul>
+  <h4><a href="#GetAllRoutes">GetAllRoutes</a></h4>
+  <ul>
+  <li><a href="#getAll"><code><span class="http-method">get</span> /v1/routes</code></a></li>
+  </ul>
+  <h4><a href="#LoginAndGenerateSession">LoginAndGenerateSession</a></h4>
+  <ul>
+  <li><a href="#authLogin"><code><span class="http-method">post</span> /auth/v1/login</code></a></li>
+  <li><a href="#validate"><code><span class="http-method">post</span> /auth/v1</code></a></li>
+  </ul>
+  <h4><a href="#Logout">Logout</a></h4>
+  <ul>
+  <li><a href="#logout"><code><span class="http-method">post</span> /auth/v1/logout</code></a></li>
+  </ul>
+  <h4><a href="#UpdateDynamicRoute">UpdateDynamicRoute</a></h4>
+  <ul>
+  <li><a href="#put"><code><span class="http-method">put</span> /v1/routes</code></a></li>
+  </ul>
+
+  <h1><a name="CreateDynamicRoute">CreateDynamicRoute</a></h1>
+  <div class="method"><a name="create"/>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="post"><code class="huge"><span class="http-method">post</span> /v1/routes</code></pre></div>
+    <div class="method-summary">Create a Dynamic Route in API Gateway (<span class="nickname">create</span>)</div>
+    <div class="method-notes"></div>
+
+
+
+
+
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#route">route</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>{
+  "metadata" : "{}",
+  "predicates" : [ {
+    "args" : "{}",
+    "name" : "name"
+  }, {
+    "args" : "{}",
+    "name" : "name"
+  } ],
+  "id" : "id",
+  "filters" : [ {
+    "args" : "{}",
+    "name" : "name"
+  }, {
+    "args" : "{}",
+    "name" : "name"
+  } ],
+  "uri" : "uri",
+  "order" : 0
+}</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+      <li><code>text/plain</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">201</h4>
+    Created
+        <a href="#route">route</a>
+    <h4 class="field-label">409</h4>
+    Conflict
+        <a href="#String">String</a>
+    <h4 class="field-label">default</h4>
+    Internal Server Error
+        <a href="#"></a>
+  </div> <!-- method -->
+  <hr/>
+  <h1><a name="DeleteDynamicRoute">DeleteDynamicRoute</a></h1>
+  <div class="method"><a name="delete"/>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="delete"><code class="huge"><span class="http-method">delete</span> /v1/routes/{route-id}</code></pre></div>
+    <div class="method-summary">Delete a Dynamic Route by ID (<span class="nickname">delete</span>)</div>
+    <div class="method-notes"></div>
+
+
+
+
+
+
+
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">204</h4>
+    Deleted Successfully
+        <a href="#"></a>
+    <h4 class="field-label">404</h4>
+    Not Found
+        <a href="#"></a>
+    <h4 class="field-label">default</h4>
+    Internal Server Error
+        <a href="#"></a>
+  </div> <!-- method -->
+  <hr/>
+  <h1><a name="GetADynamicRoute">GetADynamicRoute</a></h1>
+  <div class="method"><a name="getById"/>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /v1/routes/{route-id}</code></pre></div>
+    <div class="method-summary">Get a dynamic route by ID (<span class="nickname">getById</span>)</div>
+    <div class="method-notes"></div>
+
+
+
+
+
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#route">route</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>{
+  "metadata" : "{}",
+  "predicates" : [ {
+    "args" : "{}",
+    "name" : "name"
+  }, {
+    "args" : "{}",
+    "name" : "name"
+  } ],
+  "id" : "id",
+  "filters" : [ {
+    "args" : "{}",
+    "name" : "name"
+  }, {
+    "args" : "{}",
+    "name" : "name"
+  } ],
+  "uri" : "uri",
+  "order" : 0
+}</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    OK
+        <a href="#route">route</a>
+    <h4 class="field-label">404</h4>
+    Not Found
+        <a href="#"></a>
+    <h4 class="field-label">default</h4>
+    Internal Server Error
+        <a href="#"></a>
+  </div> <!-- method -->
+  <hr/>
+  <h1><a name="GetAllRoutes">GetAllRoutes</a></h1>
+  <div class="method"><a name="getAll"/>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="get"><code class="huge"><span class="http-method">get</span> /v1/routes</code></pre></div>
+    <div class="method-summary">Returns all Dynamic routes registered in API Gateway (<span class="nickname">getAll</span>)</div>
+    <div class="method-notes"></div>
+
+
+
+
+
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#Routes">Routes</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>{
+  "routes" : [ {
+    "metadata" : "{}",
+    "predicates" : [ {
+      "args" : "{}",
+      "name" : "name"
+    }, {
+      "args" : "{}",
+      "name" : "name"
+    } ],
+    "id" : "id",
+    "filters" : [ {
+      "args" : "{}",
+      "name" : "name"
+    }, {
+      "args" : "{}",
+      "name" : "name"
+    } ],
+    "uri" : "uri",
+    "order" : 0
+  }, {
+    "metadata" : "{}",
+    "predicates" : [ {
+      "args" : "{}",
+      "name" : "name"
+    }, {
+      "args" : "{}",
+      "name" : "name"
+    } ],
+    "id" : "id",
+    "filters" : [ {
+      "args" : "{}",
+      "name" : "name"
+    }, {
+      "args" : "{}",
+      "name" : "name"
+    } ],
+    "uri" : "uri",
+    "order" : 0
+  } ]
+}</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    OK
+        <a href="#Routes">Routes</a>
+    <h4 class="field-label">default</h4>
+    Internal Server Error
+        <a href="#"></a>
+  </div> <!-- method -->
+  <hr/>
+  <h1><a name="LoginAndGenerateSession">LoginAndGenerateSession</a></h1>
+  <div class="method"><a name="authLogin"/>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="post"><code class="huge"><span class="http-method">post</span> /auth/v1/login</code></pre></div>
+    <div class="method-summary">Validate credentials from the IAM server (<span class="nickname">authLogin</span>)</div>
+    <div class="method-notes"></div>
+
+
+
+
+    <h3 class="field-label">Request headers</h3>
+    <div class="field-items">
+      <div class="param">X-Login (required)</div>
+
+      <div class="param-desc"><span class="param-type">Header Parameter</span> &mdash; login username default: null </div>
+<div class="param">X-password (required)</div>
+
+      <div class="param-desc"><span class="param-type">Header Parameter</span> &mdash; login password default: null </div>
+<div class="param">X-tenant (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Header Parameter</span> &mdash; tenant name default: null </div>
+
+    </div>  <!-- field-items -->
+
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      
+      String
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>text/plain</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    OK
+        <a href="#String">String</a>
+    <h4 class="field-label">500</h4>
+    Invalid user credentials
+        <a href="#"></a>
+  </div> <!-- method -->
+  <hr/>
+  <div class="method"><a name="validate"/>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="post"><code class="huge"><span class="http-method">post</span> /auth/v1</code></pre></div>
+    <div class="method-summary">Validate credentials from the IAM server (<span class="nickname">validate</span>)</div>
+    <div class="method-notes"></div>
+
+
+
+
+    <h3 class="field-label">Request headers</h3>
+    <div class="field-items">
+      <div class="param">X-Login (required)</div>
+
+      <div class="param-desc"><span class="param-type">Header Parameter</span> &mdash; login username default: null </div>
+<div class="param">X-password (required)</div>
+
+      <div class="param-desc"><span class="param-type">Header Parameter</span> &mdash; login password default: null </div>
+<div class="param">X-tenant (optional)</div>
+
+      <div class="param-desc"><span class="param-type">Header Parameter</span> &mdash; tenant name default: null </div>
+
+    </div>  <!-- field-items -->
+
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      
+      String
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>text/plain</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    OK
+        <a href="#String">String</a>
+    <h4 class="field-label">500</h4>
+    Invalid user credentials
+        <a href="#"></a>
+  </div> <!-- method -->
+  <hr/>
+  <h1><a name="Logout">Logout</a></h1>
+  <div class="method"><a name="logout"/>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="post"><code class="huge"><span class="http-method">post</span> /auth/v1/logout</code></pre></div>
+    <div class="method-summary">Logout and invalidate session (<span class="nickname">logout</span>)</div>
+    <div class="method-notes"></div>
+
+
+
+
+    <h3 class="field-label">Request headers</h3>
+    <div class="field-items">
+      <div class="param">Cookie (required)</div>
+
+      <div class="param-desc"><span class="param-type">Header Parameter</span> &mdash; JSESSIONID default: null </div>
+
+    </div>  <!-- field-items -->
+
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      
+      String
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>text/plain</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    OK
+        <a href="#String">String</a>
+    <h4 class="field-label">400</h4>
+    Bad Request response
+        <a href="#"></a>
+  </div> <!-- method -->
+  <hr/>
+  <h1><a name="UpdateDynamicRoute">UpdateDynamicRoute</a></h1>
+  <div class="method"><a name="put"/>
+    <div class="method-path">
+    <a class="up" href="#__Methods">Up</a>
+    <pre class="put"><code class="huge"><span class="http-method">put</span> /v1/routes</code></pre></div>
+    <div class="method-summary">Update a Dynamic Route in API Gateway (<span class="nickname">put</span>)</div>
+    <div class="method-notes"></div>
+
+
+
+
+
+
+
+    <h3 class="field-label">Return type</h3>
+    <div class="return-type">
+      <a href="#route">route</a>
+      
+    </div>
+
+    <!--Todo: process Response Object and its headers, schema, examples -->
+
+    <h3 class="field-label">Example data</h3>
+    <div class="example-data-content-type">Content-Type: application/json</div>
+    <pre class="example"><code>{
+  "metadata" : "{}",
+  "predicates" : [ {
+    "args" : "{}",
+    "name" : "name"
+  }, {
+    "args" : "{}",
+    "name" : "name"
+  } ],
+  "id" : "id",
+  "filters" : [ {
+    "args" : "{}",
+    "name" : "name"
+  }, {
+    "args" : "{}",
+    "name" : "name"
+  } ],
+  "uri" : "uri",
+  "order" : 0
+}</code></pre>
+
+    <h3 class="field-label">Produces</h3>
+    This API call produces the following media types according to the <span class="header">Accept</span> request header;
+    the media type will be conveyed by the <span class="header">Content-Type</span> response header.
+    <ul>
+      <li><code>application/json</code></li>
+    </ul>
+
+    <h3 class="field-label">Responses</h3>
+    <h4 class="field-label">200</h4>
+    OK
+        <a href="#route">route</a>
+    <h4 class="field-label">304</h4>
+    Not Modified
+        <a href="#"></a>
+    <h4 class="field-label">default</h4>
+    Internal Server Error
+        <a href="#"></a>
+  </div> <!-- method -->
+  <hr/>
+
+  <h2><a name="__Models">Models</a></h2>
+  [ Jump to <a href="#__Methods">Methods</a> ]
+
+  <h3>Table of Contents</h3>
+  <ol>
+    <li><a href="#Routes"><code>Routes</code> - </a></li>
+    <li><a href="#filter"><code>filter</code> - </a></li>
+    <li><a href="#predicate"><code>predicate</code> - </a></li>
+    <li><a href="#route"><code>route</code> - </a></li>
+  </ol>
+
+  <div class="model">
+    <h3><a name="Routes"><code>Routes</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'>Routes Schema</div>
+    <div class="field-items">
+      <div class="param">routes (optional)</div><div class="param-desc"><span class="param-type"><a href="#route">array[route]</a></span> Routes Schema </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="filter"><code>filter</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'>Route Filters</div>
+    <div class="field-items">
+      <div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Name of the Predicate like Path, Host etc. </div>
+<div class="param">args (optional)</div><div class="param-desc"><span class="param-type"><a href="#">Object</a></span> List of predicate key value pairs </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="predicate"><code>predicate</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'>Route Predicate</div>
+    <div class="field-items">
+      <div class="param">name (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Name of the Predicate like Path, Host etc. </div>
+<div class="param">args (optional)</div><div class="param-desc"><span class="param-type"><a href="#">Object</a></span> List of predicate key value pairs </div>
+    </div>  <!-- field-items -->
+  </div>
+  <div class="model">
+    <h3><a name="route"><code>route</code> - </a> <a class="up" href="#__Models">Up</a></h3>
+    <div class='model-description'>Route schema</div>
+    <div class="field-items">
+      <div class="param">id (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Route ID </div>
+<div class="param">uri (optional)</div><div class="param-desc"><span class="param-type"><a href="#string">String</a></span> Route URI </div>
+<div class="param">metadata (optional)</div><div class="param-desc"><span class="param-type"><a href="#">Object</a></span> List of Metadata </div>
+<div class="param">order (optional)</div><div class="param-desc"><span class="param-type"><a href="#integer">Integer</a></span> Route Order </div>
+<div class="param">predicates (optional)</div><div class="param-desc"><span class="param-type"><a href="#predicate">array[predicate]</a></span> List of predicates </div>
+<div class="param">filters (optional)</div><div class="param-desc"><span class="param-type"><a href="#filter">array[filter]</a></span> List of Route Filters </div>
+    </div>  <!-- field-items -->
+  </div>
+  </body>
+</html>

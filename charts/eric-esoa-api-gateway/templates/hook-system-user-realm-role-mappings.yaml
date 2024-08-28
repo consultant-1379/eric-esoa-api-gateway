@@ -1,0 +1,100 @@
+#
+# COPYRIGHT Ericsson 2021
+#
+#
+#
+# The copyright to the computer program(s) herein is the property of
+#
+# Ericsson Inc. The programs may be used and/or copied only with written
+#
+# permission from Ericsson Inc. or in accordance with the terms and
+#
+# conditions stipulated in the agreement/contract under which the
+#
+# program(s) have been supplied.
+#
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ template "eric-esoa-api-gateway.name" . }}-system-user-realm-role-mappings-hook
+  labels:
+  {{- include "eric-esoa-api-gateway.labels" .| nindent 4 }}
+  annotations:
+    {{- include "eric-esoa-api-gateway.annotations" . | nindent 4 }}
+    "helm.sh/hook": post-install, post-upgrade, post-rollback
+    "helm.sh/hook-weight": "2"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  template:
+    metadata:
+      annotations:
+      {{- include "eric-esoa-api-gateway.annotations" .| nindent 8 }}
+      labels:
+        app: {{ template "eric-esoa-api-gateway.name" . }}
+      {{- include "eric-esoa-api-gateway.labels" .| nindent 8 }}
+    spec:
+      serviceAccountName: {{ template "eric-esoa-api-gateway.name" . }}-sa
+      {{- if include "eric-esoa-api-gateway.image.pullSecrets" . }}
+      imagePullSecrets:
+        - name: {{ template "eric-esoa-api-gateway.image.pullSecrets" . }}
+      {{- end }}
+      restartPolicy: Never
+      {{- if .Values.tolerations }}
+      tolerations:
+        {{ toYaml .Values.tolerations | indent 8 | trim }}
+      {{- end }}
+      containers:
+        - name: keycloak-client
+          image: {{ template "eric-esoa-so-library-chart.imagePath" (dict "imageId" "keycloakClient" "values" .Values "files" .Files) }}
+          imagePullPolicy: {{ .Values.global.registry.imagePullPolicy | quote }}
+          env:
+          - name: IAM_ADMIN_USER
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.global.iam.adminSecret | quote }}
+                key: {{ .Values.global.iam.userKey | quote }}
+          - name: IAM_ADMIN_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.global.iam.adminSecret | quote }}
+                key: {{ .Values.global.iam.passwordKey | quote }}
+          - name: SYSTEM_USER
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.global.systemUser.secret | quote }}
+                key: {{ .Values.global.systemUser.userKey | quote }}
+          args:
+          - "create"
+          - "user_realm_role_mappings"
+          - "--keycloak_hostname={{ .Values.global.hosts.iam }}"
+          - "--keycloak_user=$(IAM_ADMIN_USER)"
+          - "--keycloak_password=$(IAM_ADMIN_PASSWORD)"
+          - "--username=$(SYSTEM_USER)"
+          - "--config=/config/system-user-realm-role-mappings.json"
+          volumeMounts:
+          - name: {{ template "eric-esoa-api-gateway.name" . }}-system-user-realm-role-mappings-volume
+            mountPath: /config
+          - name: create-cacert-volume
+            mountPath: /mnt/certs
+          securityContext:
+            privileged: false
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false # kecloak client does write on the root file system
+            runAsNonRoot: true
+            runAsUser: 128474 # due to a limitation in the keycloak client image, it needs to be just this id
+            capabilities:
+              drop:
+                - "all"
+      nodeSelector: {{- include "eric-esoa-so-library-chart.nodeSelector" . | nindent 8 }}
+      volumes:
+      - name: {{ template "eric-esoa-api-gateway.name" . }}-system-user-realm-role-mappings-volume
+        configMap:
+          name: {{ template "eric-esoa-api-gateway.name" . }}-system-user-realm-role-mappings-configmap
+          defaultMode: 0777
+      - name: create-cacert-volume
+        secret:
+          secretName: {{ .Values.global.iam.cacert.secretName }}
+          items:
+            - key: {{ .Values.global.iam.cacert.key }}
+              path: {{ .Values.global.iam.cacert.filePath }}

@@ -1,0 +1,25 @@
+{{- $serviceMesh := include "eric-esoa-api-gateway.service-mesh-enabled" . | trim -}}
+{{- $tls := include "eric-esoa-api-gateway.global-security-tls-enabled" . | trim -}}
+{{- if and (eq $serviceMesh "true") (eq $tls "true") -}}
+apiVersion: siptls.sec.ericsson.com/v1
+kind: InternalCertificate
+metadata:
+  name: {{ include "eric-esoa-api-gateway.name" . }}-int-bro-cert
+  labels:
+  {{- include "eric-esoa-api-gateway.labels" .| nindent 4 }}
+  annotations:
+  {{- include "eric-esoa-api-gateway.annotations" .| nindent 4 }}
+spec:
+  kubernetes:
+    generatedSecretName: {{ include "eric-esoa-api-gateway.name" . }}-siptls-bro-secret
+    certificateName: "cert.pem"
+    privateKeyName: "key.pem"
+  certificate:
+    subject:
+      cn: {{ include "eric-esoa-api-gateway.name" . }}
+    issuer:
+      reference: eric-ctrl-bro-ca
+    extendedKeyUsage:
+      tlsClientAuth: true
+      tlsServerAuth: true
+{{- end }}

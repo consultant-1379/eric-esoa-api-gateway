@@ -1,0 +1,41 @@
+{
+  "request" : {
+    "url" : "/auth/realms/master/.well-known/openid-configuration",
+    "method" : "GET"
+  },
+  "response" : {
+    "status" : 200,
+    "jsonBody" :     {
+      "introspection_endpoint": "http://localhost:{port}/auth/realms/master/protocol/openid-connect/token/introspect",
+      "authorization_endpoint": "http://localhost:{port}/auth/realms/master/protocol/openid-connect/auth",
+      "check_session_iframe": "http://localhost:{port}/auth/realms/master/protocol/openid-connect/login-status-iframe.html",
+      "claim_types_supported": ["normal"],
+      "claims_parameter_supported": false,
+      "claims_supported": ["sub", "iss", "auth_time", "name", "given_name", "family_name", "preferred_username", "email"],
+      "code_challenge_methods_supported": ["plain", "S256"],
+      "end_session_endpoint": "http://localhost:{port}/auth/realms/master/protocol/openid-connect/logout",
+      "grant_types_supported": ["authorization_code", "implicit", "refresh_token", "password", "client_credentials"],
+      "id_token_signing_alg_values_supported": ["ES384", "RS384", "HS256", "HS512", "ES256", "RS256", "HS384", "ES512", "RS512"],
+      "issuer": "http://localhost:{port}/auth/realms/master",
+      "jwks_uri": "http://localhost:{port}/auth/realms/master/protocol/openid-connect/certs",
+      "registration_endpoint": "http://localhost:{port}/auth/realms/master/clients-registrations/openid-connect",
+      "request_object_signing_alg_values_supported": ["ES384", "RS384", "ES256", "RS256", "ES512", "RS512", "none"],
+      "request_parameter_supported": true,
+      "request_uri_parameter_supported": true,
+      "response_modes_supported": ["query", "fragment", "form_post"],
+      "response_types_supported": ["code", "none", "id_token", "token", "id_token token", "code id_token", "code token", "code id_token token"],
+      "scopes_supported": ["openid", "web-origins", "roles", "phone", "address", "email", "profile", "offline_access"],
+      "subject_types_supported": ["public", "pairwise"],
+      "tls_client_certificate_bound_access_tokens": true,
+      "token_endpoint": "http://localhost:{port}/auth/realms/master/protocol/openid-connect/token",
+      "token_endpoint_auth_methods_supported": ["private_key_jwt", "client_secret_basic", "client_secret_post", "client_secret_jwt"],
+      "token_endpoint_auth_signing_alg_values_supported": ["RS256"],
+      "token_introspection_endpoint": "http://localhost:{port}/auth/realms/master/protocol/openid-connect/token/introspect",
+      "userinfo_endpoint": "http://localhost:{port}/auth/realms/master/protocol/openid-connect/userinfo",
+      "userinfo_signing_alg_values_supported": ["ES384", "RS384", "HS256", "HS512", "ES256", "RS256", "HS384", "ES512", "RS512", "none"]
+    },
+    "headers" : {
+      "Content-Type" : "application/json"
+    }
+  }
+}

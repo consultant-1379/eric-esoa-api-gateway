@@ -1,0 +1,655 @@
+management:
+  server:
+    port: 8090
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    prometheus:
+      enabled: true
+    metrics:
+      enabled: true
+    gateway:
+      enabled: false
+    restart:
+      enabled: true
+    loggers:
+      enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+    enable:
+      jvm: true
+    distribution:
+      percentiles-histogram:
+        http:
+          server:
+            requests: true
+      sla:
+        http:
+          server:
+            requests: 100ms,300ms,500ms
+server:
+  use-forward-headers: true
+
+spring:
+  sleuth:
+    enabled: ${SPRING_SLEUTH_ENABLED:false}
+  zipkin:
+    enabled: ${SPRING_ZIPKIN_ENABLED:false}
+    baseUrl: ${SPRING_ZIPKIN_SERVER:http://eric-dst-collector:9411}
+  datasource:
+    url: jdbc:${DB_VENDOR:postgresql}:${JDBC_URL://${DB_HOST:eric-oss-common-postgres}:${DB_PORT:5432}/${DB_NAME:apigateway}${SSL_PARAMETERS:}}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+    driver-class-name: ${DB_DRIVER:org.postgresql.Driver}
+    hikari:
+      data-source-properties: stringtype=unspecified
+      minimumIdle: 5
+      maxLifetime: 840000
+  flyway:
+    url: jdbc:postgresql:${JDBC_URL://${DB_HOST:eric-oss-common-postgres}:${DB_PORT:5432}/${DB_NAME:apigateway}${SSL_PARAMETERS:}}
+    user: ${DB_USER}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+  application:
+    name: eo-gateway
+  cloud:
+    gateway:
+      metrics:
+        enabled: true
+      httpclient:
+        ssl:
+          useInsecureTrustManager: true
+      x-forwarded:
+        hostEnabled: false
+      routes:
+        - id: so-dashboard
+          predicates:
+            - Path=${SO_DASHBOARD_CONTEXT_PATH:/dashboard/**}
+            - Host=${SO_HOST:localhost}
+          filters:
+            - StripPrefix=1
+            - AddTokenHeaderFilter
+            - AddRequestHeader=X-RateLimit-Map-Name, dashboard-rate-limiter
+            - AddRequestHeader=X-RateLimit-Max-Access, ${SO_DASHBOARD_RATE_LIMIT_MAX_ACCESS:500}
+            - AddRequestHeader=X-RateLimit-Reset-Time, ${SO_DASHBOARD_RATE_LIMIT_RESET_TIME:1}
+            - RateLimitFilter
+          uri: ${SO_DASHBOARD_SERVICE_PATH:http://eric-eo-dashboard}
+        - id: so-onboarding
+          predicates:
+            - Path=${SO_ONBOARDING_CONTEXT_PATH:/onboarding/**}
+            - Host=${SO_HOST:localhost}
+          filters:
+            - StripPrefix=0
+            - AddTokenHeaderFilter
+            - AddRequestHeader=X-RateLimit-Map-Name, onboarding-rate-limiter
+            - AddRequestHeader=X-RateLimit-Max-Access, ${SO_ONBOARDING_RATE_LIMIT_MAX_ACCESS:500}
+            - AddRequestHeader=X-RateLimit-Reset-Time, ${SO_ONBOARDING_RATE_LIMIT_RESET_TIME:1}
+            - RateLimitFilter
+          uri: ${SO_ONBOARDING_SERVICE_PATH:http://eric-eo-onboarding}
+        - id: so-orchestrationcockpit
+          predicates:
+            - Path=${SO_ORCHESTRATIONCOCKPIT_CONTEXT_PATH:/orchestrationcockpit/**}
+            - Host=${SO_HOST:localhost}
+          filters:
+            - StripPrefix=1
+            - AddTokenHeaderFilter
+            - AddRequestHeader=X-RateLimit-Map-Name, cockpit-rate-limiter
+            - AddRequestHeader=X-RateLimit-Max-Access, ${SO_COCKPIT_RATE_LIMIT_MAX_ACCESS:500}
+            - AddRequestHeader=X-RateLimit-Reset-Time, ${SO_COCKPIT_RATE_LIMIT_RESET_TIME:1}
+            - RateLimitFilter
+          uri: ${SO_ORCHESTRATIONCOCKPIT_SERVICE_PATH:http://eric-eo-orchestrationcockpit}
+        - id: so-toe
+          predicates:
+            - Path=${SO_ORCHESTRATION_CONTEXT_PATH:/orchestration/**}
+            - Host=${SO_HOST:localhost}
+          filters:
+            - AddTokenHeaderFilter
+            - AddRequestHeader=X-RateLimit-Map-Name, toe-rate-limiter
+            - AddRequestHeader=X-RateLimit-Max-Access, ${SO_TOE_RATE_LIMIT_MAX_ACCESS:500}
+            - AddRequestHeader=X-RateLimit-Reset-Time, ${SO_TOE_RATE_LIMIT_RESET_TIME:1}
+            - RateLimitFilter
+          uri: ${SO_ORCHESTRATION_SERVICE_PATH:http://eric-oss-tosca-orchestration-enabler}
+        - id: catalog-manager
+          predicates:
+            - Path=${CATALOG_MANAGER_CONTEXT_PATH:/catalog-manager/**}
+            - Host=${SO_HOST:localhost}
+          filters:
+            - StripPrefix=0
+            - AddTokenHeaderFilter
+            - AddRequestHeader=X-RateLimit-Map-Name, catalog-rate-limiter
+            - AddRequestHeader=X-RateLimit-Max-Access, ${SO_CATALOG_RATE_LIMIT_MAX_ACCESS:500}
+            - AddRequestHeader=X-RateLimit-Reset-Time, ${SO_CATALOG_RATE_LIMIT_RESET_TIME:1}
+            - RateLimitFilter
+          uri: ${CATALOG_MANAGER_SERVICE_PATH:http://eric-eo-catalog-manager}
+        - id: so-subsystems-manager
+          predicates:
+            - Path=${SO_SUBSYSTEMMANAGER_CONTEXT_PATH:/subsystems-manager/**}
+          filters:
+            - StripPrefix=1
+            - AddTokenHeaderFilter
+            - AddRequestHeader=X-RateLimit-Map-Name, subsystemsmanager-rate-limiter
+            - AddRequestHeader=X-RateLimit-Max-Access, ${SO_SUBSYSTEMMANAGER_RATE_LIMIT_MAX_ACCESS:500}
+            - AddRequestHeader=X-RateLimit-Reset-Time, ${SO_SUBSYSTEMMANAGER_RATE_LIMIT_RESET_TIME:1}
+            - RateLimitFilter
+            - name: AddTokenHeaderFilter
+              args:
+                refresh-strategy: always
+                include-refresh-token: true
+          uri: ${SO_SUBSYSTEMMANAGER_SERVICE_PATH:http://eric-esoa-subsystems-manager}
+        - id: so-subsystem-management
+          predicates:
+            - Path=${SO_SUBSYSTEMMANAGEMENT_CONTEXT_PATH:/subsystem-manager/**}
+          filters:
+            - StripPrefix=0
+            - AddTokenHeaderFilter
+            - AddRequestHeader=X-RateLimit-Map-Name, subsystemsmanagement-rate-limiter
+            - AddRequestHeader=X-RateLimit-Max-Access, ${SO_SUBSYSTEMMANAGEMENT_RATE_LIMIT_MAX_ACCESS:500}
+            - AddRequestHeader=X-RateLimit-Reset-Time, ${SO_SUBSYSTEMMANAGEMENT_RATE_LIMIT_RESET_TIME:1}
+            - RateLimitFilter
+            - name: AddTokenHeaderFilter
+              args:
+                refresh-strategy: always
+                include-refresh-token: true
+          uri: ${SO_SUBSYSTEMMANAGEMENT_SERVICE_PATH:http://eric-esoa-subsystem-management}
+        - id: subsystemsmgmt-ui
+          predicates:
+            - Path=${SUBSYSTEMSMGMT_UI_CONTEXT_PATH:/subsystemsmgmt*ui/**}
+          filters:
+            - StripPrefix=0
+            - AddUserNameCookieFilter
+            - AddRequestHeader=X-RateLimit-Map-Name, subsystemsmanagementui-rate-limiter
+            - AddRequestHeader=X-RateLimit-Max-Access, ${SO_SUBSYSTEMSMGMT_UI_RATE_LIMIT_MAX_ACCESS:500}
+            - AddRequestHeader=X-RateLimit-Reset-Time, ${SO_SUBSYSTEMSMGMT_UI_RATE_LIMIT_RESET_TIME:1}
+            - RateLimitFilter
+            - name: AddTokenHeaderFilter
+              args:
+                refresh-strategy: always
+                include-refresh-token: true
+          uri: ${SUBSYSTEMSMGMT_UI_SERVICE_PATH:http://eric-esoa-subsystem-management-ui}
+        - id: so-ip-manager
+          predicates:
+            - Path=${SO_IPMANAGER_CONTEXT_PATH_DEPRECATED:/ip-manager/**}
+            - Host=${SO_HOST:localhost}
+          filters:
+            - StripPrefix=1
+            - AddTokenHeaderFilter
+            - AddRequestHeader=X-RateLimit-Map-Name, ipmanager-rate-limiter
+            - AddRequestHeader=X-RateLimit-Max-Access, ${SO_IPMANAGER_RATE_LIMIT_MAX_ACCESS:500}
+            - AddRequestHeader=X-RateLimit-Reset-Time, ${SO_IPMANAGER_RATE_LIMIT_RESET_TIME:1}
+            - RateLimitFilter
+          uri: ${SO_IPMANAGER_SERVICE_PATH:http://eric-eo-ipaddress-manager}
+        - id: so-ip-manager
+          predicates:
+            - Path=${SO_IPMANAGER_CONTEXT_PATH:/ipam/**}
+            - Host=${SO_HOST:localhost}
+          filters:
+            - StripPrefix=0
+            - AddTokenHeaderFilter
+          uri: ${SO_IPMANAGER_SERVICE_PATH:http://eric-eo-ipaddress-manager}
+        - id: ipam-ui
+          predicates:
+            - Path=${SO_IPAM_UI_CONTEXT_PATH:/ipam*ui/**}
+          filters:
+            - StripPrefix=0
+            - AddUserNameCookieFilter
+            - AddRequestHeader=X-RateLimit-Map-Name, ipamui-rate-limiter
+            - AddRequestHeader=X-RateLimit-Max-Access, ${SO_IPAM_UI_RATE_LIMIT_MAX_ACCESS:500}
+            - AddRequestHeader=X-RateLimit-Reset-Time, ${SO_IPAM_UI_RATE_LIMIT_RESET_TIME:1}
+            - RateLimitFilter
+          uri: ${SO_IPAM_UI_SERVICE_PATH:http://eric-eo-ipam-ui}
+        - id: so-topology
+          predicates:
+            - Path=${SO_TOPOLOGY_CONTEXT_PATH:/topology/**}
+            - Host=${SO_HOST:localhost}
+          filters:
+            - StripPrefix=0
+            - AddTokenHeaderFilter
+            - AddRequestHeader=X-RateLimit-Map-Name, topology-rate-limiter
+            - AddRequestHeader=X-RateLimit-Max-Access, ${SO_TOPOLOGY_RATE_LIMIT_MAX_ACCESS:500}
+            - AddRequestHeader=X-RateLimit-Reset-Time, ${SO_TOPOLOGY_RATE_LIMIT_RESET_TIME:1}
+            - RateLimitFilter
+          uri: ${SO_TOPOLOGY_SERVICE_PATH:http://eric-eo-topology}
+        - id: so-nssmf-agent
+          predicates:
+            - Path=${SO_NSSMF_AGENT_CONTEXT_PATH:/nssmf-agent/**}
+            - Host=${SO_HOST:localhost:8080}
+          filters:
+            - StripPrefix=0
+            - AddTokenHeaderFilter
+            - AddRequestHeader=X-RateLimit-Map-Name, nssmfagent-rate-limiter
+            - AddRequestHeader=X-RateLimit-Max-Access, ${SO_NSSMF_AGENT_RATE_LIMIT_MAX_ACCESS:500}
+            - AddRequestHeader=X-RateLimit-Reset-Time, ${SO_NSSMF_AGENT_RATE_LIMIT_RESET_TIME:1}
+            - RateLimitFilter
+          uri: ${SO_NSSMF_AGENT_SERVICE_PATH:http://eric-eo-so-nssmf-agent}
+          #---- Routes for requests to PmServer solution in SO only--------------------------------------------------------------
+          # Keep this route for backward compatibility for current approach, when PMServer is deployed as a part of so chart
+          # Because API Gateway works as a reverse proxy, Pm_Server should be set up to use METRIC_CONTEXT_PATH as BasePath value
+          # In current SO integration chart value is - so/metrics/. See details: https://gerrit.ericsson.se/plugins/gitiles/OSS/com.ericsson.oss.orchestration/eso-baseline/+/master/charts/eric-eo-so/values.yaml
+          # Can be removed after finished:  https://jira-oss.seli.wh.rnd.internal.ericsson.com/browse/SM-35013
+        - id: so-metric
+          predicates:
+            # should match with pm-server server.baseURL value
+            - Path=${SO_METRIC_CONTEXT_PATH:/so/metrics/**}
+            - Host=${SO_HOST:localhost:9090}
+          filters:
+            - AddUserNameCookieFilter
+          uri: ${SO_METRIC_SERVICE_PATH:http://eric-so-pm-server:9090}
+        - id: bro
+          predicates:
+            - Path=${BRO_CONTEXT_PATH:/backup-restore/**}
+          filters:
+            - StripPrefix=1
+            - AddRequestHeader=X-RateLimit-Map-Name, bro-rate-limiter
+            - AddRequestHeader=X-RateLimit-Max-Access, ${BRO_RATE_LIMIT_MAX_ACCESS:500}
+            - AddRequestHeader=X-RateLimit-Reset-Time, ${BRO_RATE_LIMIT_RESET_TIME:1}
+            - RateLimitFilter
+          uri: ${BRO_SERVICE_PATH:http://eric-ctrl-bro:7001}
+        - id: oauth2-token-endpoint
+          predicates:
+            - Path=${IAM_TOKEN_CONTEXT_PATH:/oauth2/auth/realms/*/protocol/openid-connect/token}
+          filters:
+            - StripPrefix=1
+            - RemoveRequestHeader=X-Forwarded-Host
+            - RemoveRequestHeader=cookie
+            - name: AddTokenHeaderFilter
+              args:
+                refresh-strategy: expiring
+          uri: ${IAM_URL:http://dummy-url}
+        - id: usermgmt-service
+          predicates:
+            - Path=${USERMGMT_SERVICE_CONTEXT_PATH:/idm/usermgmt/**,/idm/rolemgmt/**}
+          filters:
+            - StripPrefix=0
+            - AddRequestHeader=X-RateLimit-Map-Name, usermgmt-rate-limiter
+            - AddRequestHeader=X-RateLimit-Max-Access, ${USERMGMT_RATE_LIMIT_MAX_ACCESS:500}
+            - AddRequestHeader=X-RateLimit-Reset-Time, ${USERMGMT_RATE_LIMIT_RESET_TIME:1}
+            - RateLimitFilter
+            - name: AddTokenHeaderFilter
+              args:
+                refresh-strategy: always
+                include-refresh-token: true
+          uri: ${USERMGMT_SERVICE_PATH:http://eric-eo-usermgmt}
+        - id: usermgmt-ui
+          predicates:
+            - Path=${USERMGMT_UI_CONTEXT_PATH:/idm/usermgmt*ui/**}
+          filters:
+            - StripPrefix=0
+            - AddUserNameCookieFilter
+            - AddRequestHeader=X-RateLimit-Map-Name, usermgmtui-rate-limiter
+            - AddRequestHeader=X-RateLimit-Max-Access, ${USERMGMT_UI_RATE_LIMIT_MAX_ACCESS:500}
+            - AddRequestHeader=X-RateLimit-Reset-Time, ${USERMGMT_UI_RATE_LIMIT_RESET_TIME:1}
+            - RateLimitFilter
+          uri: ${USERMGMT_UI_SERVICE_PATH:http://eric-eo-usermgmt-ui}
+        - id: tenantmgmt-service
+          predicates:
+            - Path=${TENANTMGMT_SERVICE_CONTEXT_PATH:/idm/tenantmgmt/**}
+          filters:
+            - StripPrefix=0
+            - AddRequestHeader=X-RateLimit-Map-Name, tenantmgmt-rate-limiter
+            - AddRequestHeader=X-RateLimit-Max-Access, ${TENANTMGMT_RATE_LIMIT_MAX_ACCESS:500}
+            - AddRequestHeader=X-RateLimit-Reset-Time, ${TENANTMGMT_RATE_LIMIT_RESET_TIME:1}
+            - RateLimitFilter
+            - name: AddTokenHeaderFilter
+              args:
+                refresh-strategy: expiring
+                include-refresh-token: true
+          uri: ${TENANTMGMT_SERVICE_PATH:http://eric-eo-tenantmgmt}
+        - id: uds-apx
+          predicates:
+            - Path=${UDS_APX_CONTEXT_PATH:/udsapx/policy/**}
+            - Host=${UDS_HOST:localhost:9090}
+          filters:
+            - StripPrefix=1
+            - AddRequestHeader=X-RateLimit-Map-Name, uds-apx-rate-limiter
+            - AddRequestHeader=X-RateLimit-Max-Access, ${UDS_APX_RATE_LIMIT_MAX_ACCESS:500}
+            - AddRequestHeader=X-RateLimit-Reset-Time, ${UDS_APX_RATE_LIMIT_RESET_TIME:1}
+            - RateLimitFilter
+          uri: ${UDS_APX_SERVICE_PATH:http://eric-oss-uds-policy-ui:9090}
+          order: 0
+        - id: uds-artifact
+          predicates:
+            - Path=${UDS_ARTIFACT_CONTEXT_PATH:/artifact/**}
+            - Host=${UDS_HOST:localhost:8095}
+          filters:
+            - StripPrefix=0
+            - AddRequestHeader=X-RateLimit-Map-Name, uds-artifact-rate-limiter
+            - AddRequestHeader=X-RateLimit-Max-Access, ${UDS_ARTIFACT_RATE_LIMIT_MAX_ACCESS:500}
+            - AddRequestHeader=X-RateLimit-Reset-Time, ${UDS_ARTIFACT_RATE_LIMIT_RESET_TIME:1}
+            - RateLimitFilter
+          uri: ${UDS_ARTIFACT_SERVICE_PATH:http://eric-oss-policy-artifact-ui:8095}
+          order: 0
+        - id: so
+          predicates:
+            - Path=${SO_GUI_CONTEXT_PATH:/**}
+            - Host=${SO_HOST:local.so:8080}
+          filters:
+            - StripPrefix=0
+            - AddUserNameCookieFilter
+            - AddRequestHeader=X-RateLimit-Map-Name, so-rate-limiter
+            - AddRequestHeader=X-RateLimit-Max-Access, ${SO_GUI_RATE_LIMIT_MAX_ACCESS:500}
+            - AddRequestHeader=X-RateLimit-Reset-Time, ${SO_GUI_RATE_LIMIT_RESET_TIME:1}
+            - RateLimitFilter
+          uri: ${SO_GUI_SERVICE_PATH:http://eric-eo-orchestration-gui}
+        - id: sdd
+          predicates:
+            - Path=${SDD_GUI_CONTEXT_PATH:/**}
+            - Host=${SDD_HOST:local.sdd:8080}
+          filters:
+            - StripPrefix=0
+            - AddRequestHeader=X-RateLimit-Map-Name, soGui-rate-limiter
+            - AddRequestHeader=X-RateLimit-Max-Access, ${SO_GUI_RATE_LIMIT_MAX_ACCESS:500}
+            - AddRequestHeader=X-RateLimit-Reset-Time, ${SO_GUI_RATE_LIMIT_RESET_TIME:1}
+            - RateLimitFilter
+          uri: ${SDD_GUI_SERVICE_PATH:http://sdd-sim:8222}
+        - id: uds
+          predicates:
+            - Path=${UDS_GUI_CONTEXT_PATH:/**}
+            - Host=${UDS_HOST:local.uds:8080}
+          filters:
+            - StripPrefix=0
+            - AddRequestHeader=X-RateLimit-Map-Name, uds-rate-limiter
+            - AddRequestHeader=X-RateLimit-Max-Access, ${UDS_RATE_LIMIT_MAX_ACCESS:500}
+            - AddRequestHeader=X-RateLimit-Reset-Time, ${UDS_RATE_LIMIT_RESET_TIME:1}
+            - RateLimitFilter
+          uri: ${UDS_GUI_SERVICE_PATH:http://eric-oss-uds-authenticator:8285}
+          order: 1
+        - id: gui-aggregator-metadata
+          predicates:
+            - Path=${GUI_AGGREGATOR_METADATA_PATH:/ui-meta/**,/ui-logging/**,/gas-internal/**,/ui-serve/**}
+            - Host=${GUI_AGGREGATOR_HOST:localhost}
+          filters:
+            - AddUserNameCookieFilter
+            - AddRequestHeader=X-RateLimit-Map-Name, guiAggregator-rate-limiter
+            - AddRequestHeader=X-RateLimit-Max-Access, ${GUI_AGGREGATOR_RATE_LIMIT_MAX_ACCESS:500}
+            - AddRequestHeader=X-RateLimit-Reset-Time, ${GUI_AGGREGATOR_RATE_LIMIT_RESET_TIME:1}
+            - RateLimitFilter
+          uri: ${GUI_AGGREGATOR_SERVICE_PATH:http://eric-adp-gui-aggregator-service:3000}
+        - id: gui-aggregator
+          predicates:
+            - Path=${GUI_AGGREGATOR_CONTEXT_PATH:/**}
+            - Host=${GUI_AGGREGATOR_HOST:localhost}
+          filters:
+            - AddUserNameCookieFilter
+            - AddRequestHeader=X-RateLimit-Map-Name, guiAggregator-rate-limiter
+            - AddRequestHeader=X-RateLimit-Max-Access, ${GUI_AGGREGATOR_RATE_LIMIT_MAX_ACCESS:500}
+            - AddRequestHeader=X-RateLimit-Reset-Time, ${GUI_AGGREGATOR_RATE_LIMIT_RESET_TIME:1}
+            - RateLimitFilter
+            - RewritePath=/(?<segment>.*), /ui/$\{segment}
+          uri: ${GUI_AGGREGATOR_SERVICE_PATH:http://eric-adp-gui-aggregator-service:3000}
+          order: 10000
+        - id: help-aggregator
+          predicates:
+            - Path=${HELP_AGGREGATOR_METADATA_PATH:/help-meta/**,/help-content/**}
+            - Host=${HELP_AGGREGATOR_HOST:localhost}
+          filters:
+            - AddUserNameCookieFilter
+            - AddRequestHeader=X-RateLimit-Map-Name, helpAggregator-rate-limiter
+            - AddRequestHeader=X-RateLimit-Max-Access, ${HELP_AGGREGATOR_RATE_LIMIT_MAX_ACCESS:500}
+            - AddRequestHeader=X-RateLimit-Reset-Time, ${HELP_AGGREGATOR_RATE_LIMIT_RESET_TIME:1}
+            - RateLimitFilter
+          uri: ${HELP_AGGREGATOR_SERVICE_PATH:http://eric-oss-help-aggregator:3000}
+        - id: vnfm-onboarding
+          predicates:
+            - Path=${VNFM_ONBOARDING_CONTEXT_PATH:/vnfm/onboarding/**}
+            - Host=${VNFM_HOST:localhost:8080}
+          filters:
+            - StripPrefix=2
+            - AddTokenHeaderFilter
+            - AddRequestHeader=X-RateLimit-Map-Name, onboarding-rate-limiter
+            - AddRequestHeader=X-RateLimit-Max-Access, ${VNFM_ONBOARDING_RATE_LIMIT_MAX_ACCESS:500}
+            - AddRequestHeader=X-RateLimit-Reset-Time, ${VNFM_ONBOARDING_RATE_LIMIT_RESET_TIME:1}
+            - AddRequestHeader=X-Forwarded-Host, ${VNFM_HOST:localhost}
+            - RateLimitFilter
+          uri: ${VNFM_ONBOARDING_SERVICE_PATH:http://eric-am-onboarding-service}
+        - id: vnfm-container
+          predicates:
+            - Path=${VNFM_CONTAINER_CONTEXT_PATH:/vnfm/container/**}
+            - Host=${VNFM_HOST:localhost:8080}
+          filters:
+            - StripPrefix=2
+            - AddTokenHeaderFilter
+            - AddRequestHeader=X-RateLimit-Map-Name, vnfm-nbi-rate-limiter
+            - AddRequestHeader=X-RateLimit-Max-Access, ${VNFM_NBI_SERVICE_RATE_LIMIT_MAX_ACCESSS:500}
+            - AddRequestHeader=X-RateLimit-Reset-Time, ${VNFM_NBI_RATE_LIMIT_RESET_TIME:1}
+            - AddRequestHeader=X-Forwarded-Host, ${VNFM_HOST:localhost}
+            - RateLimitFilter
+          uri: ${VNFM_CONTAINER_SERVICE_PATH:http://eric-eo-evnfm-nbi}
+          # Redirects old WFS cluster config API into new one on LCM service for backward compatibility.
+          # Should be kept while old API is used by EO-CM.
+        - id: vnfm-wfs
+          predicates:
+            - Path=${VNFM_WFS_CONTEXT_PATH:/vnfm/wfs/api/lcm/v2/cluster}
+            - Host=${VNFM_HOST:localhost:8080}
+          filters:
+            - StripPrefix=0
+            - RewritePath=/vnfm/wfs/api/lcm/v2/cluster,/vnflcm/v1/clusterconfigs
+            - AddTokenHeaderFilter
+            - AddRequestHeader=X-RateLimit-Map-Name, vnfm-nbi-rate-limiter
+            - AddRequestHeader=X-RateLimit-Max-Access, ${VNFM_NBI_SERVICE_RATE_LIMIT_MAX_ACCESSS:500}
+            - AddRequestHeader=X-RateLimit-Reset-Time, ${VNFM_NBI_RATE_LIMIT_RESET_TIME:1}
+            - AddRequestHeader=wfs-clusterconfig, v2
+            - AddRequestHeader=X-Forwarded-Host, ${VNFM_HOST:localhost}
+            - RateLimitFilter
+          uri: ${VNFM_NBI_SERVICE_PATH:http://eric-eo-evnfm-nbi}
+        - id: vnfm-nbi
+          predicates:
+            - Path=${VNFM_NBI_CONTEXT_PATH:/vnflcm/**}
+            - Host=${VNFM_HOST:localhost:8080}
+          filters:
+            - StripPrefix=0
+            - AddTokenHeaderFilter
+            - AddRequestHeader=X-RateLimit-Map-Name, vnfm-nbi-rate-limiter
+            - AddRequestHeader=X-RateLimit-Max-Access, ${VNFM_NBI_SERVICE_RATE_LIMIT_MAX_ACCESSS:500}
+            - AddRequestHeader=X-RateLimit-Reset-Time, ${VNFM_NBI_RATE_LIMIT_RESET_TIME:1}
+            - AddRequestHeader=X-Forwarded-Host, ${VNFM_HOST:localhost}
+            - RateLimitFilter
+          uri: ${VNFM_NBI_SERVICE_PATH:http://eric-eo-evnfm-nbi}
+        - id: metric-view
+          predicates:
+            # should match with pm-server server.baseURL value
+            - Path=${METRIC_CONTEXT_PATH:/metrics/viewer/**}
+          filters:
+            - AddUserNameCookieFilter
+          uri: ${METRIC_SERVICE_PATH:http://eric-pm-server}
+          order: ${METRIC_ROUTE_ORDER:-1}
+        - id: vnfm-gui
+          predicates:
+            - Path=${VNFM_GUI_CONTEXT_PATH:/vnfm/**}
+            - Host=${VNFM_HOST:localhost:8080}
+          filters:
+            - StripPrefix=1
+            - AddUserNameCookieFilter
+            - AddRequestHeader=X-RateLimit-Map-Name, vnfm-all-rate-limiter
+            - AddRequestHeader=X-RateLimit-Max-Access, ${VNFM_GUI_RATE_LIMIT_MAX_ACCESS:500}
+            - AddRequestHeader=X-RateLimit-Reset-Time, ${VNFM_GUI_RATE_LIMIT_RESET_TIME:1}
+            - RateLimitFilter
+          uri: ${VNFM_GUI_SERVICE_PATH:http://eric-am-common-wfs-ui}
+        - id: gr-bur-orchestrator
+          predicates:
+            - Path=${GR_ORCHESTRATOR_CONTEXT_PATH:/**}
+            - Host=${GR_HOST:localhost:8080}
+          filters:
+            - StripPrefix=0
+            - AddTokenHeaderFilter
+            - AddRequestHeader=X-RateLimit-Map-Name, gr-bur-orchestrator-rate-limiter
+            - AddRequestHeader=X-RateLimit-Max-Access, ${GR_ORCHESTRATOR_LIMIT_MAX_ACCESS:500}
+            - AddRequestHeader=X-RateLimit-Reset-Time, ${GR_ORCHESTRATOR_LIMIT_RESET_TIME:1}
+            - RateLimitFilter
+          uri: ${GR_ORCHESTRATOR_SERVICE_PATH:http://eric-gr-bur-orchestrator}
+        - id: vnflcm-gui
+          predicates:
+            - Path=${VNFLCM_GUI_CONTEXT_PATH:/**}
+            - Host=${VNFM_HOST:localhost:80}
+          filters:
+            - StripPrefix=0
+            - AddTokenHeaderFilter
+            - AddUserNameCookieFilter
+            - AddRequestHeader=X-RateLimit-Map-Name, vnflcm-all-rate-limiter
+            - AddRequestHeader=X-RateLimit-Max-Access, ${VNFLCM_GUI_RATE_LIMIT_MAX_ACCESS:500}
+            - AddRequestHeader=X-RateLimit-Reset-Time, ${VNFLCM_GUI_RATE_LIMIT_RESET_TIME:1}
+            - RateLimitFilter
+          uri: ${VNFLCM_GUI_SERVICE_PATH:http://eric-vnflcm-ui}
+        - id: vnflcm-vevnfmem
+          predicates:
+            - Path=${VNFLCM_VEVNFMEM_CONTEXT_PATH:/vevnfmem/vnflcm/**}
+            - Host=${VNFM_HOST:localhost:8080}
+          filters:
+            - StripPrefix=0
+            - AddTokenHeaderFilter
+            - AddUserNameCookieFilter
+            - AddRequestHeader=X-RateLimit-Map-Name, vnflcm-vevnfmem-rate-limiter
+            - AddRequestHeader=X-RateLimit-Max-Access, ${VNFLCM_VEVNFMEM_RATE_LIMIT_MAX_ACCESS:500}
+            - AddRequestHeader=X-RateLimit-Reset-Time, ${VNFLCM_VEVNFMEM_RATE_LIMIT_RESET_TIME:1}
+            - RateLimitFilter
+          uri: ${VNFLCM_VEVNFMEM_SERVICE_PATH:http://eric-vnflcm-service}
+          # policy configuration
+        - id: apex
+          predicates:
+            - Path=${APEX_SERVICE_CONTEXT_PATH:/policy/apex-pdp/**}
+            - Host=${POLICY_HOST:localhost:6969}
+          filters:
+            - StripPrefix=0
+            - AddRequestHeader=X-RateLimit-Map-Name, apex-all-rate-limiter
+            - AddRequestHeader=X-RateLimit-Max-Access, ${APEX_SERICE_RATE_LIMIT_MAX_ACCESS:500}
+            - AddRequestHeader=X-RateLimit-Reset-Time, ${APEX_SERVICE_RATE_LIMIT_RESET_TIME:1}
+            - RateLimitFilter
+          uri: ${APEX_SERVICE_PATH:https://eric-oss-pf-apex:6969}
+        - id: policy-api
+          predicates:
+            - Path=${POLICY_API_SERVICE_CONTEXT_PATH:/policy/api/**}
+            - Host=${POLICY_HOST:localhost:6969}
+          filters:
+            - StripPrefix=0
+            - AddRequestHeader=X-RateLimit-Map-Name, policy-api-all-rate-limiter
+            - AddRequestHeader=X-RateLimit-Max-Access, ${POLICY_API_RATE_LIMIT_MAX_ACCESS:500}
+            - AddRequestHeader=X-RateLimit-Reset-Time, ${POLICY_API_RATE_LIMIT_RESET_TIME:1}
+            - RateLimitFilter
+          uri: ${POLICY_API_SERVICE_PATH:https://eric-oss-pf-policyapi:6969}
+        - id: policy-pf-pap
+          predicates:
+            - Path=${POLICY_PF_PAP_SERVICE_CONTEXT_PATH:/policy/pap/**}
+            - Host=${POLICY_HOST:localhost:6969}
+          filters:
+            - StripPrefix=0
+            - AddRequestHeader=X-RateLimit-Map-Name, policy-pf-pap-all-rate-limiter
+            - AddRequestHeader=X-RateLimit-Max-Access, ${POLICY_PF_PAP_RATE_LIMIT_MAX_ACCESS:500}
+            - AddRequestHeader=X-RateLimit-Reset-Time, ${POLICY_PF_PAP_RATE_LIMIT_RESET_TIME:1}
+            - RateLimitFilter
+          uri: ${POLICY_PF_PAP_SERVICE_PATH:https://eric-oss-pf-pap:6969}
+        - id: policy-pf-xacml
+          predicates:
+            - Path=${POLICY_PF_XACML_SERVICE_CONTEXT_PATH:/policy/pdpx/**}
+            - Host=${POLICY_HOST:localhost:6969}
+          filters:
+            - StripPrefix=0
+            - AddRequestHeader=X-RateLimit-Map-Name, policy-pf-xacml-all-rate-limiter
+            - AddRequestHeader=X-RateLimit-Max-Access, ${POLICY_PF_XACML_RATE_LIMIT_MAX_ACCESS:500}
+            - AddRequestHeader=X-RateLimit-Reset-Time, ${POLICY_PF_XACML_RATE_LIMIT_RESET_TIME:1}
+            - RateLimitFilter
+          uri: ${POLICY_PF_XACML_SERVICE_PATH:https://eric-oss-pf-xacml:6969}
+        - id: policy-pf-drools
+          predicates:
+            - Path=${POLICY_PF_DROOLS_SERVICE_CONTEXT_PATH:/policy/drools/**}
+            - Host=${POLICY_HOST:localhost:6969}
+          filters:
+            - StripPrefix=2
+            - AddRequestHeader=X-RateLimit-Map-Name, policy-pf-drools-all-rate-limiter
+            - AddRequestHeader=X-RateLimit-Max-Access, ${POLICY_PF_DROOLS_RATE_LIMIT_MAX_ACCESS:500}
+            - AddRequestHeader=X-RateLimit-Reset-Time, ${POLICY_PF_DROOLS_RATE_LIMIT_RESET_TIME:1}
+            - RateLimitFilter
+          uri: ${POLICY_PF_DROOLS_SERVICE_PATH:https://eric-oss-pf-drools:6969}
+        - id: policy-pf-dist
+          predicates:
+            - Path=${POLICY_PF_DIST_SERVICE_CONTEXT_PATH:/policy/dist/**}
+            - Host=${POLICY_HOST:localhost:6969}
+          filters:
+            - StripPrefix=2
+            - AddRequestHeader=X-RateLimit-Map-Name, policy-dist-all-rate-limiter
+            - AddRequestHeader=X-RateLimit-Max-Access, ${POLICY_PF_DIST_RATE_LIMIT_MAX_ACCESS:500}
+            - AddRequestHeader=X-RateLimit-Reset-Time, ${POLICY_PF_DIST_RATE_LIMIT_RESET_TIME:1}
+            - RateLimitFilter
+          uri: ${POLICY_PF_DIST_SERVICE_PATH:https://eric-oss-pf-policy-dist:6969}
+        - id: dmaap
+          predicates:
+            - Path=${DMAAP_SERVICE_CONTEXT_PATH:/dmaap-mr/**}
+            - Host=${POLICY_HOST:localhost:6969}
+          filters:
+            - StripPrefix=1
+            - AddRequestHeader=X-RateLimit-Map-Name, dmaap-all-rate-limiter
+            - AddRequestHeader=X-RateLimit-Max-Access, ${DMAAP_RATE_LIMIT_MAX_ACCESS:500}
+            - AddRequestHeader=X-RateLimit-Reset-Time, ${DMAAP_RATE_LIMIT_RESET_TIME:1}
+            - RateLimitFilter
+          uri: ${DMAAP_SERVICE_PATH:https://eric-oss-dmaap:3905}
+        - id: ecm-services
+          predicates:
+            - Path=${ECM_SERVICE_CONTEXT_PATH:/ecm_service/**}
+          uri: ${ECM_SERVICE_PATH:https://ecm-services}
+        - id: cloud-mgr-gui
+          predicates:
+            - Path=${CLOUD_MGR_GUI_CONTEXT_PATH:/cloudMgrGui/**}
+          uri: ${CLOUD_MGR_GUI_PATH:https://cloud-mgr-gui}
+        - id: open-am
+          predicates:
+            - Path=${OPEN_AM_SERVICE_CONTEXT_PATH:/openam/**}
+          uri: ${OPEN_AM_SERVICE_PATH:https://openam}
+          # policy configuration end
+
+  security:
+    oauth2:
+      client:
+        provider:
+          keycloak:
+            issuer-uri: ${IAM_URL:dummy-url}
+            token-uri: ${IAM_URL:dummy-url}/protocol/openid-connect/token
+        registration:
+          keycloak:
+            client-id: ${CLIENT_ID:eo}
+            client-secret: ${CLIENT_SECRET:dummy-secret}
+  main:
+    banner-mode: "OFF"
+    allow-bean-definition-overriding: true
+
+hystrix:
+  command:
+    fallbackcmd:
+      execution:
+        isolation:
+          thread:
+            timeoutInMilliseconds: 60000
+
+keycloak:
+  authorization:
+    resources:
+      refresh-interval: 60000
+
+logging:
+  endpoints:
+    exclude: /actuator/health, /actuator/prometheus
+  level:
+    org.springframework.boot.autoconfigure.security: warn
+
+#timeoutDuration in seconds
+session:
+  timeout: ${SESSION_TIMEOUT:1800}
+  defaultMaxInactiveInterval: ${DEFAULT_MAX_INACTIVE_INTERVAL:7200}
+  cookieMaxAge: ${COOKIE_MAX_AGE:36000}
+
+
+ericsson:
+  gateway:
+    security:
+      allowed-paths:
+        - /login/**
+        - /auth/**
+        - /actuator/health/**
+        - /actuator/prometheus/**
+        - ${ECM_SERVICE_CONTEXT_PATH:/ecm_service/**}
+        - ${CLOUD_MGR_GUI_CONTEXT_PATH:/cloudMgrGui/**}
+        - ${OPEN_AM_CONTEXT_PATH:/openam/**}

@@ -1,0 +1,278 @@
+#
+# COPYRIGHT Ericsson 2021
+#
+#
+#
+# The copyright to the computer program(s) herein is the property of
+#
+# Ericsson Inc. The programs may be used and/or copied only with written
+#
+# permission from Ericsson Inc. or in accordance with the terms and
+#
+# conditions stipulated in the agreement/contract under which the
+#
+# program(s) have been supplied.
+#
+
+openapi: "3.0.2"
+info:
+  x-api-id: 18822464-e056-4cec-918e-f40ba3090b69
+  x-audience: company-internal
+  description: "Dynamic Routes in API Gateway"
+  version: "0.0.1"
+  title: "Dynamic Routes in API Gateway"
+  license:
+    name: "COPYRIGHT Ericsson 2021"
+    url: "https://www.ericsson.com/en/legal"
+  termsOfService: "https://www.ericsson.com/en/legal"
+  contact:
+    email: "Team AetosDios<PDLTEAMAET@pdl.internal.ericsson.com>"
+tags:
+  - name: "get all dynamic routes"
+    description: "Get all Dynamic Routes in API Gateway"
+  - name: "create a dynamic route"
+    description: "Create a Dynamic Route in API Gateway"
+  - name: "update a dynamic route"
+    description: "Update a Dynamic Route in API Gateway"
+  - name: "delete a dynamic route"
+    description: "Delete a Dnynamic Route in API Gateway"
+paths:
+  /v1/routes:
+    get:
+      tags:
+        - "get all routes"
+      summary: "Returns all Dynamic routes registered in API Gateway"
+      operationId: "getAll"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                $ref: "#/components/schemas/Routes"
+        default:
+          description: "Internal Server Error"
+    post:
+      tags:
+        - "create dynamic route"
+      summary: "Create a Dynamic Route in API Gateway"
+      operationId: "create"
+      responses:
+        "201":
+          description: "Created"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                $ref: "#/components/schemas/route"
+        "409":
+          description: "Conflict"
+          content:
+            text/plain:
+              schema:
+                type: "string"
+                example: "Route with ID already exists"
+        default:
+          description: "Internal Server Error"
+    put:
+      tags:
+        - "update dynamic route"
+      summary: "Update a Dynamic Route in API Gateway"
+      operationId: "put"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                $ref: "#/components/schemas/route"
+        "304":
+          description: "Not Modified"
+        default:
+          description: "Internal Server Error"
+
+  /v1/routes/{route-id}:
+    get:
+      tags:
+        - "get a dynamic route"
+      summary: "Get a dynamic route by ID"
+      operationId: "getById"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                type: "object"
+                $ref: "#/components/schemas/route"
+        "404":
+          description: "Not Found"
+        default:
+          description: "Internal Server Error"
+    delete:
+      tags:
+        - "delete dynamic route"
+      summary: "Delete a Dynamic Route by ID"
+      operationId: "delete"
+      responses:
+        "204":
+          description: "Deleted Successfully"
+        "404":
+          description: "Not Found"
+        default:
+          description: "Internal Server Error"
+
+  /auth/v1:
+    post:
+      tags:
+        - "Login and generate session"
+      summary: "Validate credentials from the IAM server"
+      operationId: "validate"
+      parameters:
+        - in: header
+          name: X-Login
+          schema:
+            type: string
+          required: true
+          description: login username
+        - in: header
+          name: X-password
+          schema:
+            type: string
+          required: true
+          description: login password
+        - in: header
+          name: X-tenant
+          schema:
+            type: string
+          required: false
+          description: tenant name
+      responses:
+        "200":
+          description: "OK"
+          content:
+            text/plain:
+              schema:
+                type: string
+
+        "500":
+          description: "Invalid user credentials"
+
+  /auth/v1/login:
+    post:
+      tags:
+        - "Login and generate session"
+      summary: "Validate credentials from the IAM server"
+      operationId: "authLogin"
+      parameters:
+        - in: header
+          name: X-Login
+          schema:
+            type: string
+          required: true
+          description: login username
+        - in: header
+          name: X-password
+          schema:
+            type: string
+          required: true
+          description: login password
+        - in: header
+          name: X-tenant
+          schema:
+            type: string
+          required: false
+          description: tenant name
+      responses:
+        "200":
+          description: "OK"
+          content:
+            text/plain:
+              schema:
+                type: string
+        "500":
+          description: "Invalid user credentials"
+
+  /auth/v1/logout:
+    post:
+      tags:
+        - "Logout"
+      summary: "Logout and invalidate session"
+      operationId: "logout"
+      parameters:
+        - in: header
+          name: Cookie
+          schema:
+            type: string
+          required: true
+          description: JSESSIONID
+          example: JSESSIONID=6c2048f6-2f87-4ec6-b19c-ebdd582b0969
+      responses:
+        "200":
+          description: "OK"
+          content:
+            text/plain:
+              schema:
+                type: string
+        "400":
+          description: "Bad Request response"
+
+components:
+  schemas:
+    Routes:
+      type: "object"
+      description: "Routes Schema"
+      properties:
+        routes:
+          type: "array"
+          description: "Routes Schema"
+          items:
+            $ref: '#/components/schemas/route'
+    route:
+      type: "object"
+      description: "Route schema"
+      properties:
+        id:
+          type: "string"
+          description: "Route ID"
+        uri:
+          type: "string"
+          description: "Route URI"
+        metadata:
+          type: "object"
+          description: "List of Metadata"
+        order:
+          type: "integer"
+          description: "Route Order"
+        predicates:
+          type: "array"
+          description: "List of predicates"
+          items:
+            $ref: '#/components/schemas/predicate'
+        filters:
+          type: "array"
+          description: "List of Route Filters"
+          items:
+            $ref: '#/components/schemas/filter'
+    predicate:
+      type: "object"
+      description: "Route Predicate"
+      properties:
+        name:
+          type: "string"
+          description: "Name of the Predicate like Path, Host etc."
+        args:
+          type: "object"
+          description: "List of predicate key value pairs"
+    filter:
+      type: "object"
+      description: "Route Filters"
+      properties:
+        name:
+          type: "string"
+          description: "Name of the Predicate like Path, Host etc."
+        args:
+          type: "object"
+          description: "List of predicate key value pairs"

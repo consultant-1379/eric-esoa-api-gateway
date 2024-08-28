@@ -1,0 +1,2 @@
+logging:
+  config: ${LOGBACK_CONFIG_FILE:classpath:custom-logback-plain-text.xml}

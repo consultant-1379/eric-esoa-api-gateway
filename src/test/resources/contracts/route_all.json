@@ -1,0 +1,83 @@
+[{
+  "id": "example-route",
+  "predicates": [{
+    "name": "Path",
+    "args": {
+      "_genkey_0": "/nginx/**"
+    }
+  },
+    {
+      "name": "Host",
+      "args": {
+        "_genkey_0": "pf.ceo2.hahn149.rnd.gicc.ericsson.se"
+      }
+    }
+  ],
+  "filters": [{
+    "name": "AddRequestHeader",
+    "args": {
+      "_genkey_0": "X-RateLimit-Map-Name",
+      "_genkey_1": "so-rate-limiter"
+    }
+  },
+    {
+      "name": "AddRequestHeader",
+      "args": {
+        "_genkey_0": "X-RateLimit-Max-Access",
+        "_genkey_1": "180"
+      }
+    },
+    {
+      "name": "AddRequestHeader",
+      "args": {
+        "_genkey_0": "X-RateLimit-Reset-Time",
+        "_genkey_1": "4"
+      }
+    }
+  ],
+  "uri": "http://test-gw-client-mychart",
+  "metadata": {},
+  "order": 0
+},
+  {
+    "id": "example-route-2",
+    "predicates": [{
+      "name": "Path",
+      "args": {
+        "_genkey_0": "/nginx/**"
+      }
+    },
+      {
+        "name": "Host",
+        "args": {
+          "_genkey_0": "pf.ceo2.hahn149.rnd.gicc.ericsson.se"
+        }
+      }
+    ],
+    "filters": [{
+      "name": "AddRequestHeader",
+      "args": {
+        "_genkey_0": "X-RateLimit-Map-Name",
+        "_genkey_1": "so-rate-limiter"
+      }
+    },
+      {
+        "name": "AddRequestHeader",
+        "args": {
+          "_genkey_0": "X-RateLimit-Max-Access",
+          "_genkey_1": "180"
+        }
+      },
+      {
+        "name": "AddRequestHeader",
+        "args": {
+          "_genkey_0": "X-RateLimit-Reset-Time",
+          "_genkey_1": "4"
+        }
+      }
+    ],
+    "uri": "http://test-gw-client-mychart",
+    "metadata": {},
+    "order": 0
+  }
+]

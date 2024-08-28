@@ -1,0 +1,110 @@
+#
+# COPYRIGHT Ericsson 2021
+#
+#
+#
+# The copyright to the computer program(s) herein is the property of
+#
+# Ericsson Inc. The programs may be used and/or copied only with written
+#
+# permission from Ericsson Inc. or in accordance with the terms and
+#
+# conditions stipulated in the agreement/contract under which the
+#
+# program(s) have been supplied.
+#
+
+---
+description: Get all registered dynamic routes
+name: Get all registered dynamic routes
+priority: 8
+request:
+  method: GET
+  urlPath: /v1/routes
+  headers:
+    Content-Type: application/json
+response:
+  status: 200
+  bodyFromFile: route_all.json
+  headers:
+    Content-Type: application/json
+
+---
+description: Delete a dynamic routes
+name: Delete a dynamic routes
+priority: 8
+request:
+  method: DELETE
+  urlPath: /v1/routes/example-route
+  headers:
+    Content-Type: application/json
+response:
+  status: 204
+
+---
+description: Get a particular dynamic route
+name: Get a particular dynamic route
+priority: 8
+request:
+  method: GET
+  urlPath: /v1/routes/example-route
+  headers:
+    Content-Type: application/json
+response:
+  status: 200
+  bodyFromFile: route.json
+  headers:
+    Content-Type: application/json
+
+---
+description: Post a dynamic route
+name: Post a dynamic route
+priority: 8
+request:
+  method: POST
+  urlPath: /v1/routes
+  headers:
+    Content-Type: application/json
+  bodyFromFile: route.json
+response:
+  status: 201
+  bodyFromFile: route.json
+  headers:
+    Content-Type: application/json
+
+---
+description: Get a particular dynamic route 404 not found
+name: Get a particular dynamic route 404 not found
+priority: 8
+request:
+  method: GET
+  urlPath: /v1/routes/does-not-exist
+  headers:
+    Content-Type: application/json
+response:
+  status: 404
+
+---
+description: Post a dynamic route 401 bad json body
+name: Post a dynamic route 401 bad json body
+priority: 8
+request:
+  method: POST
+  urlPath: /v1/routes
+  headers:
+    Content-Type: application/json
+  body: "{\"id\":WRONG!,\"predicates\":[]}"
+response:
+  status: 401
+
+---
+description: Delete a dynamic routes 404 not found
+name: Delete a dynamic routes 404 not found
+priority: 8
+request:
+  method: DELETE
+  urlPath: /v1/routes/does-not-exist
+  headers:
+    Content-Type: application/json
+response:
+  status: 404

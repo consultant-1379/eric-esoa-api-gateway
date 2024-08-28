@@ -1,0 +1,27 @@
+{{- if .Values.global -}}
+  {{- if .Values.global.security -}}
+  {{- if .Values.global.security.policyBinding -}}
+  {{- if .Values.global.security.policyBinding.create -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ template "eric-esoa-api-gateway.name" . }}-sa-security-policy
+  labels:
+    app: {{ template "eric-esoa-api-gateway.name" . }}
+    chart: {{ template "eric-esoa-api-gateway.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+  {{- include "eric-esoa-api-gateway.labels" .| nindent 4 }}
+  annotations:
+    {{- include "eric-esoa-api-gateway.securityPolicy.annotations" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "eric-esoa-api-gateway.securityPolicy.reference" . }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ template "eric-esoa-api-gateway.name" . }}-sa
+      {{- end -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}

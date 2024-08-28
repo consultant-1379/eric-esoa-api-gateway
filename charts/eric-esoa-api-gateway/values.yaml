@@ -1,0 +1,458 @@
+global:
+  hosts:
+    so: so.ericsson.example.com
+    sdd: sdd.ericsson.example.com
+    vnfm: vnfm.ericsson.example.com
+    iam: iam.ericsson.example.com
+    pf: pf.ericsson.example.com
+    uds: uds.ericsson.example.com
+    gr: gr.ericsson.example.com
+    gas: gas.ericsson.example.com
+    cm: cm.ericsson.example.com
+  registry:
+    imagePullPolicy: IfNotPresent
+    url: armdocker.rnd.ericsson.se
+    repoPath:    
+  pullSecret:
+  iam:
+    clientId: eo
+    adminSecret: eric-sec-access-mgmt-creds
+    userKey: kcadminid
+    passwordKey: kcpasswd
+    cacert:
+      secretName: iam-cacert-secret
+      key: tls.crt
+      filePath: iam/ca.crt
+  timezone: UTC
+  postgresCredentials:
+    secret: eric-eo-database-pg-secret
+  systemUser:
+    secret: eric-oss-system-user-secret
+    userKey: system-user
+    passwordKey: system-user-pwd
+  security:
+    policyBinding:
+      create: false
+  nodeSelector: {}
+
+updateStrategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 25%
+    maxSurge: 25%
+
+imageCredentials:
+  pullSecret:
+  mainImage:
+    registry:
+      url:
+    repoPath:
+  # overrides global registry
+  #url: armdocker.companyA.se
+  # Secret must be manually created in the namespace, no default value
+  #pullSecret: eric-adp-example-secret
+  keycloakClient:
+    registry:
+      url:
+    repoPath:
+  pgInitContainer:
+    repoPath:
+    registry:
+      url:
+  init:
+    repoPath:
+    registry:
+      url:
+
+#######################################################################
+iam:
+  issuerPath: /auth/realms/master
+  createIamClient: true
+  kubernetesSecret: iam-client-secret
+  secretKey: clientSecret
+  token:
+    context: /oauth2/auth/realms/*/protocol/openid-connect/token
+#######################################################################
+
+so:
+  dashboard:
+    context: /dashboard/**
+    service: http://eric-eo-dashboard
+    rateLimit:
+      maxAccess: 500
+      # resetTime in seconds
+      resetTime: 1
+  toe:
+    context: /orchestration/**
+    service: http://eric-oss-tosca-orchestration-enabler
+    rateLimit:
+      maxAccess: 500
+      # resetTime in seconds
+      resetTime: 1
+  onboarding:
+    context: /onboarding/**
+    service: http://eric-eo-onboarding
+    rateLimit:
+      maxAccess: 500
+      # resetTime in seconds
+      resetTime: 1
+  topology:
+    context: /topology/**
+    service: http://eric-eo-topology
+    rateLimit:
+      maxAccess: 500
+      # resetTime in seconds
+      resetTime: 1
+  nssmfagent:
+    context: /nssmf-agent/**
+    service: http://eric-eo-so-nssmf-agent:8080
+    rateLimit:
+      maxAccess: 500
+      # resetTime in seconds
+      resetTime: 1
+  orchestrationcockpit:
+    context: /orchestrationcockpit/**
+    service: http://eric-eo-orchestrationcockpit
+    rateLimit:
+      maxAccess: 500
+      # resetTime in seconds
+      resetTime: 1
+  catalogmanager:
+    context: /catalog-manager/**
+    service: http://eric-eo-catalog-manager
+    rateLimit:
+      maxAccess: 500
+      # resetTime in seconds
+      resetTime: 1
+  gui:
+    context: /**
+    service: http://eric-eo-orchestration-gui
+    rateLimit:
+      maxAccess: 500
+      # resetTime in seconds
+      resetTime: 1
+  subsystemsmanager:
+    context: /subsystems-manager/**
+    service: http://eric-esoa-subsystems-manager
+    rateLimit:
+      maxAccess: 500
+      # resetTime in seconds
+      resetTime: 1
+  subsystemsmanagement:
+    context: /subsystem-manager/**
+    service: http://eric-esoa-subsystem-management
+    rateLimit:
+      maxAccess: 500
+      # resetTime in seconds
+      resetTime: 1
+  ipmanager:
+    depricatedcontext: /ip-manager/**
+    context: /ipam/**
+    service: http://eric-eo-ipaddress-manager
+    rateLimit:
+      maxAccess: 500
+      # resetTime in seconds
+      resetTime: 1
+  metric:
+    context: /so/metrics/**
+    service: http://eric-so-pm-server:9090
+    service_tls: http://eric-so-pm-server:9089
+usermgmt:
+  ui:
+    context: /idm/usermgmt*ui/**
+    service: http://eric-eo-usermgmt-ui
+    rateLimit:
+      maxAccess: 500
+      # resetTime in seconds
+      resetTime: 1
+  service:
+    context: /idm/usermgmt/**,/idm/rolemgmt/**
+    service: http://eric-eo-usermgmt
+    rateLimit:
+      maxAccess: 500
+      # resetTime in seconds
+      resetTime: 1
+subsystemsmgmt:
+  ui:
+    context: /subsystemsmgmt*ui/**
+    service: http://eric-esoa-subsystem-management-ui
+    rateLimit:
+      maxAccess: 500
+      # resetTime in seconds
+      resetTime: 1
+ipam:
+  ui:
+    context: /ipam*ui/**
+    service: http://eric-eo-ipam-ui
+    rateLimit:
+      maxAccess: 500
+      # resetTime in seconds
+      resetTime: 1
+tenantmgmt:
+  service:
+    context: /idm/tenantmgmt/**
+    service: http://eric-eo-tenantmgmt
+    rateLimit:
+      maxAccess: 500
+      # resetTime in seconds
+      resetTime: 1
+guiAggregator:
+  context: /**
+  metadata: /ui-meta/**,/ui-logging/**,/gas-internal/**,/ui-serve/**
+  service: http://eric-adp-gui-aggregator-service-http:3000
+  rateLimit:
+    maxAccess: 500
+    # resetTime in seconds
+    resetTime: 1
+helpAggregator:
+  metadata: /help-meta/**,/help-content/**
+  service: http://eric-oss-help-aggregator-http:3000
+  rateLimit:
+    maxAccess: 500
+    # resetTime in seconds
+    resetTime: 1
+metric:
+  context: /metrics/viewer/**
+  service: http://eric-pm-server:9090
+  service_tls: http://eric-pm-server:9089
+  routeOrder: -1
+bro:
+  context: /backup-restore/**
+  service: http://eric-ctrl-bro:7001
+  rateLimit:
+    maxAccess: 500
+    # resetTime in seconds
+    resetTime: 1
+gr:
+  orchestrator:
+    context: /**
+    service: http://eric-gr-bur-orchestrator
+    rateLimit:
+      maxAccess: 500
+      # resetTime in seconds
+      resetTime: 1
+nfvo:
+  notifications:
+    context: /v3/notfications/**
+    service: http://notfications/v3/notfications
+  subscriptions:
+    context: /v3/subscriptions/**
+    service: http://notfications/v3/subscriptions
+  cmdbproxyservicedesign:
+    context: /services/cmdb-services-ws/service-design/**
+    service: http://cmdb-proxy/services/cmdb-services-ws/service-design
+  cmdbproxyqueryservices:
+    context: /services/cmdb-services-ws/query-services/**
+    service: http://cmdb-proxy/services/cmdb-services-ws/query-services
+  cmdbproxynotifications:
+    context: /cmdbproxy-notifications/**
+    service: http://cmdb-proxy/notificatons.*
+
+sdd:
+  context: /**
+  service: http://sdd-sim:8222
+
+uds:
+  apx:
+    context: /udsapx/policy/**
+    service: http://eric-oss-uds-policy-ui:9090
+    rateLimit:
+      maxAccess: 500
+      resetTime: 1
+
+  artifact:
+    context: /artifact/**
+    service: http://eric-oss-uds-policy-artifact-ui:8095
+    rateLimit:
+      maxAccess: 500
+      resetTime: 1
+
+  context: /**
+  service: http://eric-oss-uds-authenticator:8285
+
+vnfm:
+  gui:
+    context: /vnfm/**
+    service: http://eric-am-common-wfs-ui
+    rateLimit:
+      maxAccess: 500
+      # resetTime in seconds
+      resetTime: 1
+  onboarding:
+    context: /vnfm/onboarding/**
+    service: http://eric-am-onboarding-service
+    rateLimit:
+      maxAccess: 500
+      # resetTime in seconds
+      resetTime: 1
+  wfs:
+    context: /vnfm/wfs/api/lcm/v2/cluster
+    service: http://eric-am-common-wfs
+  nbi:
+    context: /vnflcm/**
+    service: http://eric-eo-evnfm-nbi
+    rateLimit:
+      maxAccess: 500
+      # resetTime in seconds
+      resetTime: 1
+  container:
+    context: /vnfm/container/**
+    service: http://eric-eo-evnfm-nbi
+
+vnflcm:
+  gui:
+    context: /**
+    service: http://eric-vnflcm-ui:80
+    rateLimit:
+      maxAccess: 500
+      # resetTime in seconds
+      resetTime: 1
+  #sol002 the rest endpints should directly reach vnflcm-service container.
+  vevnfmem:
+    context: /vevnfmem/vnflcm/**
+    service: http://eric-vnflcm-service:8080
+    rateLimit:
+      maxAccess: 500
+      # resetTime in seconds
+      resetTime: 1
+
+policy:
+  apex:
+    context: /policy/apex-pdp/**
+    service: https://eric-oss-pf-apex:6969
+    rateLimit:
+      maxAccess: 1000
+      # resetTime in seconds
+      resetTime: 1
+  policyapi:
+    context: /policy/api/**
+    service: https://eric-oss-pf-policyapi:6969
+    rateLimit:
+      maxAccess: 1000
+      # resetTime in seconds
+      resetTime: 1
+  policypap:
+    context: /policy/pap/**
+    service: https://eric-oss-pf-pap:6969
+    rateLimit:
+      maxAccess: 1000
+      # resetTime in seconds
+      resetTime: 1
+  policyxacml:
+    context: /policy/pdpx/**
+    service: https://eric-oss-pf-xacml:6969
+    rateLimit:
+      maxAccess: 1000
+      # resetTime in seconds
+      resetTime: 1
+  policydrools:
+    context: /policy/drools/**
+    service: https://eric-oss-pf-drools:6969
+    rateLimit:
+      maxAccess: 1000
+      # resetTime in seconds
+      resetTime: 1
+  policydist:
+    context: /policy/dist/**
+    service: https://eric-oss-pf-policy-dist:6969
+    rateLimit:
+      maxAccess: 1000
+      # resetTime in seconds
+      resetTime: 1
+
+dmaap:
+  context: /dmaap-mr/**
+  service: https://eric-oss-dmaap:3905
+  rateLimit:
+      maxAccess: 1000
+      # resetTime in seconds
+      resetTime: 1
+
+ecm:
+  service:
+    context: /ecm_service/**
+    path: https://ecm-services
+
+cloud:
+  mgr:
+    gui:
+      context: /cloudMgrGui/**
+      path: https://cloud-mgr-gui
+
+open:
+  am:
+    context: /openam/**
+    service: https://openam
+
+jvm:
+  heap:
+    min: "300m"
+    max: "1200m"
+
+replicaCount: 1
+
+resources:
+  requests:
+    memory: 1512Mi
+    cpu: 100m
+  limits:
+    memory: 1512Mi
+    cpu: 1000m
+
+probes:
+  apigateway:
+    readinessProbe:
+      initialDelaySeconds: 60 # 1 min
+      periodSeconds: 5 # 5 sec
+      timeoutSeconds: 2 # 2 sec
+      failureThreshold: 3 # 3 no. of times
+      successThreshold: 1 # 1 no. of time
+    livenessProbe:
+      initialDelaySeconds: 600 # 10 min
+      periodSeconds: 5 # 5 sec
+      timeoutSeconds: 10 # 10 sec
+      failureThreshold: 3 #3 no. of times
+      successThreshold: 1 # 1 no. of time
+
+logging:
+  format:
+    json: true
+
+prometheus:
+  path: /actuator/prometheus
+  port:  8090
+  scrape: true
+session:
+  timeout: 1800
+  defaultMaxInactiveInterval: 7200
+  cookieMaxAge: 36000
+
+database:
+  jdbcDriver: org.postgresql.Driver
+  host: edb
+  dbName: apigateway
+  port: 5444
+  secret: edb-users-secret
+  dbaUserkey: super-user
+  dbaPasswdkey: super-pwd
+  userkey: custom-user
+  passwdkey: custom-pwd
+  vendor: postgresql
+  sslMode: disable
+
+labels: {}
+
+annotations: {}
+
+terminationGracePeriodSeconds: 30
+
+tolerations: []
+
+nodeSelector: {}
+
+# Distributed Systems Tracing (based on Sleuth+Zipkin)
+dst:
+  enabled: false
+  collector:
+    host: "http://eric-dst-collector"
+    portZipkinHttp: 9411

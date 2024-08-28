@@ -1,0 +1,51 @@
+version: '2'
+services:
+
+  api-gateway:
+      build : .
+      image: api-gateway-img
+      ports:
+        - "8081:8081"
+      environment:
+        contextURL: http://eso.icesat.seli.gic.ericsson.se
+      depends_on:
+           - log
+
+  datalake:
+      image: armdocker.rnd.ericsson.se/proj-pigs/datalake-es
+      volumes:
+        - esdata:/opt/elasticsearch/data
+      ports:
+        - 9200:9200 # Elasticsearch HTTP API
+        - 9300:9300 # Elasticsearch native transport
+      environment:
+        - cluster.name=datalake
+        - node.name=datalake-node-1
+        - bootstrap.memory_lock=true
+        - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      ulimits:
+        memlock:
+          soft: -1
+          hard: -1
+        nofile:
+          soft: 65536
+          hard: 65536
+
+  log:
+      image: armdocker.rnd.ericsson.se/proj-pigs/gs-log
+      ports:
+        - 5014:5014/tcp # Syslog
+        - 5014:5014/udp # Syslog
+        - 5015:5015/tcp # Log4j
+        - 5045:5045/tcp # Filebeat
+        - 5080:5080/tcp # HTTP API
+        - 9600:9600/tcp # Logstash
+      environment:
+        - ELASTICSEARCH_HOSTS=datalake:9200
+      depends_on:
+        - datalake
+
+volumes:
+  esdata:
+    driver: local
+  datavolume:

@@ -1,0 +1,7 @@
+apiVersion: v2
+name: eric-esoa-api-gateway
+version: 0.0.1-1
+dependencies:
+- name: eric-esoa-so-library-chart
+  version: 1.0.12-1
+  repository: https://arm.sero.gic.ericsson.se/artifactory/proj-so-gs-all-helm-local
